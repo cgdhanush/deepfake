@@ -8,14 +8,9 @@ import logging
 import sys
 from typing import Any
 
-
-# check min. python version
-if sys.version_info < (3, 11):  # pragma: no cover  # noqa: UP036
-    sys.exit("Deepfake requires Python version >= 3.11")
-
+import argparse
 from deepfake import __version__
-from deepfake.commands import Arguments
-from deepfake.exceptions import ConfigurationError, DeepfakeException, OperationalException
+from deepfake.exceptions import DeepfakeException
 from deepfake.loggers import setup_logging_pre
 from deepfake.system import  gc_set_threshold, print_version_info
 
@@ -23,7 +18,7 @@ from deepfake.system import  gc_set_threshold, print_version_info
 logger = logging.getLogger("deepfake")
 
 
-def main(sysargv: list[str] | None = None) -> None:
+def main() -> None:
     """
     This function will initiate the bot and start the trading loop.
     :return: None
@@ -32,38 +27,30 @@ def main(sysargv: list[str] | None = None) -> None:
     return_code: Any = 1
     try:
         setup_logging_pre()
-        arguments = Arguments(sysargv)
-        args = arguments.get_parsed_arg()
+        gc_set_threshold()
+
+        parser = argparse.ArgumentParser(description="Deepfake CLI")
+
+        # Mutually exclusive group so only one action can be used at a time
+        group = parser.add_mutually_exclusive_group(required=True)
+
+        group.add_argument("--start", action="store_true", help="Start the webpage")
+        group.add_argument("--version", "-v", action="store_true", help="Show the version")
+
+        args = parser.parse_args()
+
+        if args.start:
+            print("starting")
+
+        if args.version:
+           print_version_info()
 
         # Call subcommand.
-        if args.get("version") or args.get("version_main"):
-            print_version_info()
-            return_code = 0
-        elif "func" in args:
-            logger.info(f"deepfake {__version__}")
-            gc_set_threshold()
-            return_code = args["func"](args)
-        else:
-            # No subcommand was issued.
-            raise OperationalException(
-                "Usage of Deepfake requires a subcommand to be specified.\n"
-                "To have the bot executing trades in live/dry-run modes, "
-                "depending on the value of the `dry_run` setting in the config, run Deepfake "
-                "as `deepfake trade [options...]`.\n"
-                "To see the full list of options available, please use "
-                "`deepfake --help` or `deepfake <command> --help`."
-            )
-
     except SystemExit as e:  # pragma: no cover
         return_code = e
     except KeyboardInterrupt:
         logger.info("SIGINT received, aborting ...")
         return_code = 0
-    except ConfigurationError as e:
-        logger.error(
-            f"Configuration error: {e}\n"
-            f"Please make sure to review the documentation."
-        )
     except DeepfakeException as e:
         logger.error(str(e))
         return_code = 2
