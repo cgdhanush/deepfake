@@ -34,7 +34,7 @@ def main() -> None:
         # Mutually exclusive group so only one action can be used at a time
         group = parser.add_mutually_exclusive_group(required=True)
 
-        group.add_argument("--start", action="store_true", help="Start the webpage")
+        group.add_argument("start", action="store_true", help="Start the webpage")
         group.add_argument("--version", "-v", action="store_true", help="Show the version")
 
         args = parser.parse_args()
