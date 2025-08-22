@@ -13,7 +13,7 @@ from sqlalchemy.pool import StaticPool
 
 from deepfake.exceptions import OperationalException
 from deepfake.persistence.base import ModelBase
-from deepfake.persistence.trade_model import Users, Video
+from deepfake.persistence.data_model import Users, Video
 
 
 logger = logging.getLogger(__name__)

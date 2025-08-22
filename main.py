@@ -20,7 +20,7 @@ logger = logging.getLogger("deepfake")
 
 def main() -> None:
     """
-    This function will initiate the bot and start the trading loop.
+    This function will initiate the bot and start the loop.
     :return: None
     """
 
