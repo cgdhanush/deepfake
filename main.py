@@ -14,6 +14,7 @@ from deepfake.exceptions import DeepfakeException
 from deepfake.loggers import setup_logging_pre
 from deepfake.system import  gc_set_threshold, print_version_info
 
+from deepfake.deepfake import DeepFake
 
 logger = logging.getLogger("deepfake")
 
@@ -29,23 +30,23 @@ def main() -> None:
         setup_logging_pre()
         gc_set_threshold()
 
-        parser = argparse.ArgumentParser(description="Deepfake CLI")
+        parser = argparse.ArgumentParser(description="DeepFake WebApp Control")
+        subparsers = parser.add_subparsers(dest="command", required=True)
 
-        # Mutually exclusive group so only one action can be used at a time
-        group = parser.add_mutually_exclusive_group(required=True)
+        # 'start' command
+        start_parser = subparsers.add_parser("start", help="Start the webpage")
 
-        group.add_argument("start", action="store_true", help="Start the webpage")
-        group.add_argument("--version", "-v", action="store_true", help="Show the version")
+        # '--version' optional flag (global)
+        parser.add_argument("--version", "-v", action="store_true", help="Show the version")
 
         args = parser.parse_args()
 
-        if args.start:
-            print("starting")
-
         if args.version:
-           print_version_info()
+            print_version_info()
+        elif args.command == "start":
+            deepfake = DeepFake()
+            deepfake.startup()
 
-        # Call subcommand.
     except SystemExit as e:  # pragma: no cover
         return_code = e
     except KeyboardInterrupt:

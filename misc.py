@@ -4,6 +4,7 @@ Various tool function for deepfake and scripts
 
 import gzip
 import logging
+import json
 from collections.abc import Iterator, Mapping
 from io import StringIO
 from pathlib import Path
@@ -16,6 +17,20 @@ import rapidjson
 
 logger = logging.getLogger(__name__)
 
+
+def load_json(filepath: str) -> Any:
+    """
+    Loads JSON data from a file.
+
+    Args:
+        filepath (str): Path to the JSON file.
+
+    Returns:
+        Any: Parsed JSON content (usually a dict or list).
+    """
+    with open(filepath, 'r', encoding='utf-8') as f:
+        return json.load(f)
+    
 
 def dump_json_to_file(file_obj: TextIO, data: Any) -> None:
     """
@@ -144,22 +159,6 @@ def safe_value_fallback2(dict1: DictMap, dict2: DictMap, key1: str, key2: str, d
         if key2 in dict2 and dict2[key2] is not None:
             return dict2[key2]
     return default_value
-
-
-def plural(num: float, singular: str, plural: str | None = None) -> str:
-    return singular if (num == 1 or num == -1) else plural or singular + "s"
-
-
-def chunks(lst: list[Any], n: int) -> Iterator[list[Any]]:
-    """
-    Split lst into chunks of the size n.
-    :param lst: list to split into chunks
-    :param n: number of max elements per chunk
-    :return: None
-    """
-    for chunk in range(0, len(lst), n):
-        yield (lst[chunk : chunk + n])
-
 
 def parse_db_uri_for_logging(uri: str):
     """

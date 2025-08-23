@@ -9,7 +9,6 @@ Major project on detecting face swaps and deepfakes using Python and machine lea
 ### 1. Clone the repository (if applicable)
 ```bash
 git clone https://github.com/cgdhanush/deepfake
-cd deepfake
 ```
 ### 2. Create a Conda Environment
 
@@ -21,8 +20,7 @@ conda activate deepfake
 ### 3. Install Dependencies
 
 ````
-pip install -r requirements.txt
-
+pip install -r deepfake/requirements.txt
 ````
 ---
 

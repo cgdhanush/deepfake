@@ -1,6 +1,11 @@
 from typing import Any
 
 DEFAULT_CONFIG = "config.json"
-DEFAULT_DB_PROD_URL = "sqlite:///datav3.sqlite"
+DEFAULT_DB_PROD_URL = "sqlite:///user_data/datav3.sqlite"
+DEFAULT_LOG_FILE = "deepfake.log"
+
+DATETIME_PRINT_FORMAT = "%Y-%m-%d %H:%M:%S"
+
+DATA_DIR = "data_dir"
 
 Config = dict[str, Any]
