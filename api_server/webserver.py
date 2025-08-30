@@ -60,8 +60,6 @@ class ApiServer(RPCHandler):
 
         ApiServer.__initialized = True
 
-        api_config = self._config["api_server"]
-
         self.app = FastAPI(
             title="Freqtrade API",
             redoc_url=None,
@@ -114,7 +112,6 @@ class ApiServer(RPCHandler):
         )
 
     def configure_app(self, app: FastAPI, config):
-        from deepfake.rpc.api_server.api_auth import http_basic_or_jwt_token, router_login
         from deepfake.rpc.api_server.api_background_tasks import router as api_bg_tasks
         from deepfake.rpc.api_server.api_v1 import router as api_v1
         from deepfake.rpc.api_server.api_v1 import router_public as api_v1_public
@@ -123,16 +120,13 @@ class ApiServer(RPCHandler):
 
         app.include_router(api_v1_public, prefix="/api/v1")
 
-        app.include_router(router_login, prefix="/api/v1", tags=["auth"])
         app.include_router(
             api_v1,
             prefix="/api/v1",
-            dependencies=[Depends(http_basic_or_jwt_token)],
         )
         app.include_router(
             api_bg_tasks,
             prefix="/api/v1",
-            dependencies=[Depends(http_basic_or_jwt_token)],
         )
         
         app.include_router(ws_router, prefix="/api/v1")
@@ -180,20 +174,6 @@ class ApiServer(RPCHandler):
             logger.warning(
                 "SECURITY WARNING - This is insecure please set to your loopback,"
                 "e.g 127.0.0.1 in config.json"
-            )
-
-        if not self._config["api_server"].get("password"):
-            logger.warning(
-                "SECURITY WARNING - No password for local REST Server defined. "
-                "Please make sure that this is intentional!"
-            )
-
-        if self._config["api_server"].get("jwt_secret_key", "super-secret") in (
-            "super-secret, somethingrandom"
-        ):
-            logger.warning(
-                "SECURITY WARNING - `jwt_secret_key` seems to be default."
-                "Others may be able to log into your bot."
             )
 
         logger.info("Starting Local Rest Server.")

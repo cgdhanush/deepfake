@@ -39,3 +39,7 @@ def ping():
 def version():
     """Bot Version info"""
     return {"version": __version__}
+
+@router.get("/hello")
+def hello():
+    return {"message": "Hello from FastAPI 🚀"}

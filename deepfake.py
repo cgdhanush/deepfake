@@ -6,7 +6,7 @@ import logging
 
 from deepfake.constants import Config
 from deepfake.configuration import Configuration
-from deepfake.persistence import Video, LocalVideo, Users, init_db
+from deepfake.persistence import Video, LocalVideo, init_db
 
 logger = logging.getLogger(__name__)
 
@@ -20,5 +20,5 @@ class DeepFake:
 
     def startup(self):
         
-        from deepfake.rpc.api_server import ApiServer
+        from deepfake.api_server import ApiServer
         ApiServer(self.config, standalone=True)
