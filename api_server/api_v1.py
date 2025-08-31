@@ -58,14 +58,21 @@ async def upload_video(
     file_path: str = Form(...),
     uploadedDate: str = Form(...),
     
-    rpc: RPC = Depends(get_rpc)
+    rpc: RPC = Depends(get_rpc),
+    config: dict = Depends(get_config),
 ):
     try:
+        UPLOAD_DIR = config["upload_dir"]
+        file_path: Path = UPLOAD_DIR / video.filename
+        
+        with file_path.open("wb") as buffer:
+            shutil.copyfileobj(video.file, buffer)
+
         new_entry = rpc._rpc_add_deepfake(
             title=title,
             description=description,
             duration=duration,
-            file_path=file_path,
+            file_path=str(file_path.resolve()),
             uploadedDate=uploadedDate,
             video_filename=video.filename
         )

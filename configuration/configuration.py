@@ -84,3 +84,6 @@ class Configuration:
 
         config.update({"datadir": create_datadir(config)})
         logger.info("Using data directory: %s ...", config.get("datadir"))
+
+        # uplaod path 
+        config.update({"upload_dir": config["user_data_dir"] / "uploads"})

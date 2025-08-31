@@ -7,5 +7,6 @@ DEFAULT_LOG_FILE = "deepfake.log"
 DATETIME_PRINT_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 DATA_DIR = "data_dir"
+UPLOAD_DIR = "upload_dir"
 
 Config = dict[str, Any]

@@ -1,7 +1,9 @@
 import logging
 from ipaddress import ip_address
+from pathlib import Path
 from typing import Any
 
+from fastapi.staticfiles import StaticFiles
 import orjson
 import uvicorn
 from fastapi import Depends, FastAPI
@@ -106,7 +108,7 @@ class ApiServer(RPCHandler):
         from deepfake.api_server.api_background_tasks import router as api_bg_tasks
         from deepfake.api_server.api_v1 import router as api_v1
         from deepfake.api_server.web_ui import router_ui
-
+        
         app.include_router(
             api_v1,
             prefix="/api",

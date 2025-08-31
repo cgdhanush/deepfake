@@ -21,7 +21,8 @@ def create_userdata_dir(directory: str, create_dir: bool = False) -> Path:
     sub_dirs = [
         "results",
         "data",
-        "logs"
+        "uploads",
+        "logs",
     ]
     folder = Path(directory)
 
