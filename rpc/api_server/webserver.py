@@ -12,8 +12,8 @@ from starlette.responses import JSONResponse
 
 from deepfake.constants import Config
 from deepfake.exceptions import OperationalException
-from deepfake.api_server.uvicorn_threaded import UvicornServer
-from deepfake.api_server.webserver_bgwork import ApiBG
+from deepfake.rpc.api_server.uvicorn_threaded import UvicornServer
+from deepfake.rpc.api_server.webserver_bgwork import ApiBG
 from deepfake.rpc.rpc import RPC, RPCException, RPCHandler
 from deepfake.rpc.rpc_types import RPCSendMsg
 
@@ -105,9 +105,9 @@ class ApiServer(RPCHandler):
         )
 
     def configure_app(self, app: FastAPI, config):
-        from deepfake.api_server.api_background_tasks import router as api_bg_tasks
-        from deepfake.api_server.api_v1 import router as api_v1
-        from deepfake.api_server.web_ui import router_ui
+        from deepfake.rpc.api_server.api_background_tasks import router as api_bg_tasks
+        from deepfake.rpc.api_server.api_v1 import router as api_v1
+        from deepfake.rpc.api_server.web_ui import router_ui
         
         app.include_router(
             api_v1,

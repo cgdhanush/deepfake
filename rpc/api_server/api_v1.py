@@ -16,8 +16,8 @@ from deepfake import __version__
 from deepfake.persistence import Video
 from deepfake.rpc import RPC
 
-from deepfake.api_server.api_schemas import DeepfakeResponse
-from deepfake.api_server.deps import get_config, get_rpc, get_rpc_optional
+from deepfake.rpc.api_server.api_schemas import DeepfakeResponse
+from deepfake.rpc.api_server.deps import get_config, get_rpc, get_rpc_optional
 from deepfake.rpc.rpc import RPCException
 
 logger = logging.getLogger(__name__)

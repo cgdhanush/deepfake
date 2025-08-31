@@ -20,7 +20,7 @@ class DeepFake:
 
     def startup(self):
         
-        from deepfake.api_server import ApiServer
+        from deepfake.rpc.api_server import ApiServer
         from deepfake.rpc import RPC
         self._api_server = ApiServer(self.config)
         self._rpc = RPC(self)

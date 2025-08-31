@@ -4,7 +4,7 @@ from uuid import uuid4
 
 from deepfake.persistence import Video
 from deepfake.persistence.models import _request_id_ctx_var
-from deepfake.api_server.webserver_bgwork import ApiBG
+from deepfake.rpc.api_server.webserver_bgwork import ApiBG
 from deepfake.rpc.rpc import RPC
 
 from .webserver import ApiServer

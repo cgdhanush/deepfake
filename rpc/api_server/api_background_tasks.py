@@ -6,9 +6,9 @@ from fastapi import APIRouter, Depends
 from fastapi.exceptions import HTTPException
 from fastapi.responses import FileResponse
 
-from deepfake.api_server.api_schemas import BackgroundTaskStatus
-from deepfake.api_server.deps import get_config
-from deepfake.api_server.webserver_bgwork import ApiBG
+from deepfake.rpc.api_server.api_schemas import BackgroundTaskStatus
+from deepfake.rpc.api_server.deps import get_config
+from deepfake.rpc.api_server.webserver_bgwork import ApiBG
 
 
 logger = logging.getLogger(__name__)

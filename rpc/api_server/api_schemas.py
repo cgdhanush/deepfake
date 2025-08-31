@@ -2,7 +2,7 @@ from datetime import date, datetime
 from typing import Any, Optional
 
 from pydantic import AwareDatetime, BaseModel, RootModel, SerializeAsAny, model_validator
-from deepfake.api_server.webserver_bgwork import ProgressTask
+from deepfake.rpc.api_server.webserver_bgwork import ProgressTask
 
 
 class StatusMsg(BaseModel):
@@ -34,9 +34,10 @@ class ResultSchema(BaseModel):
     deepfake_detected: bool
     confidence: str
 
-    class Config:
-        orm_mode = True
-
+    model_config = {
+        "from_attributes": True
+    }
+    
 class DeepfakeResponse(BaseModel):
     id: int
     title: str
@@ -47,5 +48,6 @@ class DeepfakeResponse(BaseModel):
     video_filename: Optional[str]
     result: Optional[ResultSchema]
 
-    class Config:
-        orm_mode = True
+    model_config = {
+        "from_attributes": True
+    }
