@@ -1,24 +1,8 @@
 from datetime import date, datetime
-from typing import Any
+from typing import Any, Optional
 
 from pydantic import AwareDatetime, BaseModel, RootModel, SerializeAsAny, model_validator
-from deepfake.rpc.api_server.webserver_bgwork import ProgressTask
-
-
-class Ping(BaseModel):
-    status: str
-
-
-class AccessToken(BaseModel):
-    access_token: str
-
-
-class AccessAndRefreshToken(AccessToken):
-    refresh_token: str
-
-
-class Version(BaseModel):
-    version: str
+from deepfake.api_server.webserver_bgwork import ProgressTask
 
 
 class StatusMsg(BaseModel):
@@ -44,5 +28,24 @@ class BackgroundTaskResult(BaseModel):
     status: str
 
 
-class ResultMsg(BaseModel):
-    result: str
+class ResultSchema(BaseModel):
+    analysis_model: str
+    detection_score: float
+    deepfake_detected: bool
+    confidence: str
+
+    class Config:
+        orm_mode = True
+
+class DeepfakeResponse(BaseModel):
+    id: int
+    title: str
+    description: Optional[str]
+    duration: Optional[float]
+    file_path: Optional[str]
+    uploadedDate: Optional[datetime]
+    video_filename: Optional[str]
+    result: Optional[ResultSchema]
+
+    class Config:
+        orm_mode = True

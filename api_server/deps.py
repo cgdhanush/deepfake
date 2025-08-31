@@ -4,8 +4,8 @@ from uuid import uuid4
 
 from deepfake.persistence import Video
 from deepfake.persistence.models import _request_id_ctx_var
-from deepfake.rpc.api_server.webserver_bgwork import ApiBG
-from deepfake.rpc.rpc import RPC, RPCException
+from deepfake.api_server.webserver_bgwork import ApiBG
+from deepfake.rpc.rpc import RPC
 
 from .webserver import ApiServer
 
@@ -28,7 +28,7 @@ async def get_rpc() -> AsyncIterator[RPC] | None:
             _request_id_ctx_var.reset(ctx_token)
 
     else:
-        raise RPCException("Bot is not in the correct state")
+        raise Exception("Bot is not in the correct state")
 
 
 def get_config() -> dict[str, Any]:

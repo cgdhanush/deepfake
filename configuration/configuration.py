@@ -53,6 +53,8 @@ class Configuration:
 
         self._process_logging(config)
 
+        self._process_datadir(config)
+        
         return config
 
     def _process_logging(self, config: Config) -> None:

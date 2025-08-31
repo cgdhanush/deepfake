@@ -3,8 +3,8 @@ import logging
 from fastapi import APIRouter
 from fastapi.exceptions import HTTPException
 
-from deepfake.rpc.api_server.api_schemas import BackgroundTaskStatus
-from deepfake.rpc.api_server.webserver_bgwork import ApiBG
+from deepfake.api_server.api_schemas import BackgroundTaskStatus
+from deepfake.api_server.webserver_bgwork import ApiBG
 
 
 logger = logging.getLogger(__name__)

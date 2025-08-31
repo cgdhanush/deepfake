@@ -10,9 +10,8 @@ from starlette.responses import JSONResponse
 
 from deepfake.constants import Config
 from deepfake.exceptions import OperationalException
-from deepfake.rpc.api_server.uvicorn_threaded import UvicornServer
-from deepfake.rpc.api_server.webserver_bgwork import ApiBG
-from deepfake.rpc.api_server.ws.message_stream import MessageStream
+from deepfake.api_server.uvicorn_threaded import UvicornServer
+from deepfake.api_server.webserver_bgwork import ApiBG
 from deepfake.rpc.rpc import RPC, RPCException, RPCHandler
 from deepfake.rpc.rpc_types import RPCSendMsg
 
@@ -38,9 +37,7 @@ class ApiServer(RPCHandler):
     _rpc: RPC
     _has_rpc: bool = False
     _config: Config = {}
-    # websocket message stuff
-    _message_stream: MessageStream | None = None
-
+  
     def __new__(cls, *args, **kwargs):
         """
         This class is a singleton.
@@ -51,7 +48,7 @@ class ApiServer(RPCHandler):
             ApiServer.__initialized = False
         return ApiServer.__instance
 
-    def __init__(self, config: Config, standalone: bool = True) -> None:
+    def __init__(self, config: Config, standalone: bool = False) -> None:
         ApiServer._config = config
         if self.__initialized and (standalone or self._standalone):
             return
@@ -98,12 +95,6 @@ class ApiServer(RPCHandler):
         cls._has_rpc = False
         cls._rpc = None
 
-    def send_msg(self, msg: RPCSendMsg) -> None:
-        """
-        Publish the message to the message stream
-        """
-        if ApiServer._message_stream:
-            ApiServer._message_stream.publish(msg)
 
     def handle_rpc_exception(self, request, exc):
         logger.error(f"API Error calling: {exc}")
@@ -112,24 +103,18 @@ class ApiServer(RPCHandler):
         )
 
     def configure_app(self, app: FastAPI, config):
-        from deepfake.rpc.api_server.api_background_tasks import router as api_bg_tasks
-        from deepfake.rpc.api_server.api_v1 import router as api_v1
-        from deepfake.rpc.api_server.api_v1 import router_public as api_v1_public
-        from deepfake.rpc.api_server.api_ws import router as ws_router
-        from deepfake.rpc.api_server.web_ui import router_ui
-
-        app.include_router(api_v1_public, prefix="/api/v1")
+        from deepfake.api_server.api_background_tasks import router as api_bg_tasks
+        from deepfake.api_server.api_v1 import router as api_v1
+        from deepfake.api_server.web_ui import router_ui
 
         app.include_router(
             api_v1,
-            prefix="/api/v1",
+            prefix="/api",
         )
         app.include_router(
             api_bg_tasks,
-            prefix="/api/v1",
+            prefix="/api",
         )
-        
-        app.include_router(ws_router, prefix="/api/v1")
         # UI Router MUST be last!
         app.include_router(router_ui, prefix="")
 
@@ -142,25 +127,7 @@ class ApiServer(RPCHandler):
         )
 
         app.add_exception_handler(RPCException, self.handle_rpc_exception)
-        app.add_event_handler(event_type="startup", func=self._api_startup_event)
-        app.add_event_handler(event_type="shutdown", func=self._api_shutdown_event)
-
-    async def _api_startup_event(self):
-        """
-        Creates the MessageStream class on startup
-        so it has access to the same event loop
-        as uvicorn
-        """
-        if not ApiServer._message_stream:
-            ApiServer._message_stream = MessageStream()
-
-    async def _api_shutdown_event(self):
-        """
-        Removes the MessageStream class on shutdown
-        """
-        if ApiServer._message_stream:
-            ApiServer._message_stream = None
-
+        
     def start_api(self):
         """
         Start API ... should be run in thread.

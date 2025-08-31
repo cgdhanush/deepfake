@@ -13,7 +13,7 @@ from sqlalchemy.pool import StaticPool
 
 from deepfake.exceptions import OperationalException
 from deepfake.persistence.base import ModelBase
-from deepfake.persistence.data_model import Video
+from deepfake.persistence.data_model import Video, Result
 
 
 logger = logging.getLogger(__name__)
@@ -69,6 +69,8 @@ def init_db(db_url: str) -> None:
     Video.session = scoped_session(
         sessionmaker(bind=engine, autoflush=False), scopefunc=get_request_or_thread_id
     )
+    Result.session = Video.session
+    ModelBase.metadata.create_all(engine)
     
     # Set SQLite to use WAL mode if applicable
     if db_url.startswith("sqlite://"):

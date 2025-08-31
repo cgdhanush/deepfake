@@ -1,48 +1,51 @@
-"""
-This module contains the class to persist Videos into SQLite
-"""
-
-import logging
-from typing import Any, ClassVar
-
-from sqlalchemy import Integer, Table, Column
+from sqlalchemy import Integer, String, Float, Boolean, DateTime, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from datetime import datetime
+from typing import ClassVar, Optional
 
 from deepfake.persistence.base import ModelBase, SessionType
+import logging
 
 logger = logging.getLogger(__name__)
 
-
 class LocalVideo:
-    """
-    A base local video class for handling video data before persistence
-    """
-
-    def __init__(self, **kwargs):
-        self.id = kwargs.get("id", 0)
-        self.users = kwargs.get("users", [])
+    id: int
+    title: str
+    description: Optional[str]
+    duration: Optional[float]
+    file_path: Optional[str]
+    uploadedDate: Optional[datetime]
+    video_filename: Optional[str]
+    result: Optional["Result"]
 
     def __repr__(self):
-        return f"Video(id={self.id})"
-
-
+        return f"Video(id={self.id}, title={self.title})"
+    
+    def __init__(self, **kwargs):
+        for key in kwargs:
+            setattr(self, key, kwargs[key])
+    
 class Video(ModelBase, LocalVideo):
-    """
-    Video model to persist video information
-    """
-
     __tablename__ = "videos"
     session: ClassVar[SessionType]
-
     use_db: bool = True
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    title: Mapped[str] = mapped_column(String, nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(String)
+    duration: Mapped[Optional[float]] = mapped_column(Float)
+    file_path: Mapped[Optional[str]] = mapped_column(String)
+    uploadedDate: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.now)
+    video_filename: Mapped[Optional[str]] = mapped_column(String)
+
+    # One-to-one relationship
+    result: Mapped[Optional["Result"]] = relationship("Result", back_populates="video", uselist=False, cascade="all, delete-orphan")
 
     def __init__(self, **kwargs):
-        LocalVideo.__init__(self, **kwargs)
-
+        super().__init__(**kwargs)
+            
     def __repr__(self):
-        return f"Video(id={self.id})"
+        return f"Video(id={self.id}, title={self.title})"
 
     @staticmethod
     def commit():
@@ -51,3 +54,22 @@ class Video(ModelBase, LocalVideo):
     @staticmethod
     def rollback():
         Video.session.rollback()
+
+
+
+class Result(ModelBase):
+    __tablename__ = "results"
+    session: ClassVar[SessionType]
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    video_id: Mapped[int] = mapped_column(ForeignKey("videos.id"), unique=True)
+    analysis_model: Mapped[str] = mapped_column(String)
+    detection_score: Mapped[float] = mapped_column(Float)
+    deepfake_detected: Mapped[bool] = mapped_column(Boolean)
+    confidence: Mapped[str] = mapped_column(String)
+
+    # Back-reference to Video
+    video: Mapped["Video"] = relationship("Video", back_populates="result")
+
+    def __repr__(self):
+        return f"Result(model={self.analysis_model}, score={self.detection_score}, detected={self.deepfake_detected})"
