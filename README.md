@@ -22,7 +22,34 @@ conda activate deepfake
 ````
 pip install -r deepfake/requirements.txt
 ````
+
+### 3. Create User Directory
+
+````
+mkdir user_data 
+````
+
+### 3. Create config.json inside user_data and paste this
+
+````
+{
+    "api_server": {
+        "enabled": true,
+        "listen_ip_address": "0.0.0.0",
+        "listen_port": 5000,
+        "verbosity": "error",
+        "enable_openapi": false,
+        "CORS_origins": []
+        
+    }
+}
+````
+
+#### then save the file go to parent dir and run the following command
+
+
 ---
+
 
 ## 🚀 Run the Project
 
