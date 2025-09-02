@@ -10,4 +10,5 @@ USER_DATA_DIR = "user_data"
 DATA_DIR = "data_dir"
 UPLOAD_DIR = "upload_dir"
 
+USER_DATA_FILES = ["config.json"]
 Config = dict[str, Any]

@@ -9,7 +9,7 @@ import logging
 import sys
 
 from deepfake import __version__
-from deepfake.deepfake import DeepFake
+from deepfake.deepfake import DeepFake, start_create_userdir
 from deepfake.exceptions import DeepfakeException
 from deepfake.loggers import setup_logging_pre
 from deepfake.system import gc_set_threshold, print_version_info
@@ -43,15 +43,17 @@ def main() -> None:
             return_code = 0
 
         else:
-            deepfake = DeepFake()
-
             match args.command:
                 case "start":
+                    deepfake = DeepFake()
                     deepfake.startup()
+                    
                 case "train":
-                    deepfake.startup()  # Replace with `deepfake.train()` if different logic needed
+                    deepfake = DeepFake()
+                    deepfake.startup()  
+                    
                 case "create-userdir":
-                    deepfake.start_create_userdir()
+                    start_create_userdir()
 
     except SystemExit as e:  # Exiting normally (argparse)
         return_code = e.code

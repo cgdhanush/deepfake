@@ -40,13 +40,13 @@ class DeepFake:
         """
         pass
     
+
+def start_create_userdir() -> None:
+    """
+    Create "user_data" directory to contain user data.
+    """
+    from deepfake.configuration.directory_operations import create_userdata_dir, copy_sample_files
+    from deepfake.constants import USER_DATA_DIR
     
-    def start_create_userdir(self) -> None:
-        """
-        Create "user_data" directory to contain user data.
-        """
-        from deepfake.configuration.directory_operations import create_userdata_dir
-        from deepfake.constants import USER_DATA_DIR
-        
-        create_userdata_dir(USER_DATA_DIR, create_dir=True)
-       
+    user_dir = create_userdata_dir(USER_DATA_DIR, create_dir=True)
+    copy_sample_files(user_dir)

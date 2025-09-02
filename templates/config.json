@@ -1,0 +1,11 @@
+{
+    "api_server": {
+        "enabled": true,
+        "listen_ip_address": "0.0.0.0",
+        "listen_port": 5000,
+        "verbosity": "error",
+        "enable_openapi": false,
+        "CORS_origins": []
+        
+    }
+}
