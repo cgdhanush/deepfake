@@ -3,6 +3,8 @@ The Main class
 """
 
 import logging
+import sys
+from typing import Any
 
 from deepfake.constants import Config
 from deepfake.configuration import Configuration
@@ -19,8 +21,10 @@ class DeepFake:
 
         init_db(self.config["db_url"])
 
-    def startup(self):
-        
+    def startup(self) -> None:
+        """
+        Start the Webserver to test.
+        """
         from deepfake.rpc.api_server import ApiServer
         from deepfake.rpc import RPC
         
@@ -30,5 +34,19 @@ class DeepFake:
         
         self._api_server.add_rpc_handler(self._rpc)
         
-    def start_train(self):
+    def start_train(self) -> None:
+        """"
+        strat the training model...
+        """
         pass
+    
+    
+    def start_create_userdir(self) -> None:
+        """
+        Create "user_data" directory to contain user data.
+        """
+        from deepfake.configuration.directory_operations import create_userdata_dir
+        from deepfake.constants import USER_DATA_DIR
+        
+        create_userdata_dir(USER_DATA_DIR, create_dir=True)
+       

@@ -26,6 +26,7 @@ def main() -> None:
     """
 
     return_code: Any = 1
+    
     try:
         setup_logging_pre()
         gc_set_threshold()
@@ -39,6 +40,13 @@ def main() -> None:
         # 'train' commmand
         train_parser = subparsers.add_parser("train", help="Start the webpage")
 
+        # add create-userdir subcommand
+        create_userdir_cmd = subparsers.add_parser(
+            "create-userdir",
+            help="Create user-data directory.",
+        )
+        
+        
         # '--version' optional flag (global)
         parser.add_argument("--version", "-v", action="store_true", help="Show the version")
 
@@ -54,6 +62,10 @@ def main() -> None:
         elif args.command == "train":
             deepfake = DeepFake()
             deepfake.startup()
+        
+        elif args.command == "create-userdir":
+            deepfake = DeepFake()
+            deepfake.start_create_userdir()
             
     except SystemExit as e:  # pragma: no cover
         return_code = e
