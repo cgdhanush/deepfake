@@ -10,6 +10,7 @@ from deepfake.persistence import Video, LocalVideo, init_db
 
 logger = logging.getLogger(__name__)
 
+
 class DeepFake:
 
     def __init__(self):
@@ -22,7 +23,12 @@ class DeepFake:
         
         from deepfake.rpc.api_server import ApiServer
         from deepfake.rpc import RPC
+        
+        # Start the Websrver
         self._api_server = ApiServer(self.config)
         self._rpc = RPC(self)
         
         self._api_server.add_rpc_handler(self._rpc)
+        
+    def start_train(self):
+        pass

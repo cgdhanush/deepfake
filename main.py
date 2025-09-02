@@ -35,6 +35,9 @@ def main() -> None:
 
         # 'start' command
         start_parser = subparsers.add_parser("start", help="Start the webpage")
+        
+        # 'train' commmand
+        train_parser = subparsers.add_parser("train", help="Start the webpage")
 
         # '--version' optional flag (global)
         parser.add_argument("--version", "-v", action="store_true", help="Show the version")
@@ -43,10 +46,15 @@ def main() -> None:
 
         if args.version:
             print_version_info()
+            
         elif args.command == "start":
             deepfake = DeepFake()
             deepfake.startup()
 
+        elif args.command == "train":
+            deepfake = DeepFake()
+            deepfake.startup()
+            
     except SystemExit as e:  # pragma: no cover
         return_code = e
     except KeyboardInterrupt:
