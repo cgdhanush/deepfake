@@ -1,15 +1,14 @@
 import logging
 import os
 from pathlib import Path
+import shutil
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, File, Form, UploadFile
 from fastapi.exceptions import HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 
-from deepfake.rpc.api_server.api_schemas import BackgroundTaskStatus
-from deepfake.rpc.api_server.deps import get_config
-from deepfake.rpc.api_server.webserver_bgwork import ApiBG
-
+from deepfake.rpc.api_server.deps import get_config, get_rpc
+from deepfake.rpc.rpc import RPC
 
 logger = logging.getLogger(__name__)
 
@@ -27,33 +26,40 @@ def get_video(filename: str,  config: dict = Depends(get_config),):
     return FileResponse(path=file_path, media_type='video/mp4', filename=filename)
 
 
-@router.get("/background", response_model=list[BackgroundTaskStatus], tags=["webserver"])
-def background_job_list():
-    return [
-        {
-            "job_id": jobid,
-            "job_category": job["category"],
-            "status": job["status"],
-            "running": job["is_running"],
-            "progress": job.get("progress"),
-            "progress_tasks": job.get("progress_tasks"),
-            "error": job.get("error", None),
-        }
-        for jobid, job in ApiBG.jobs.items()
-    ]
+@router.post("/upload-video")
+async def upload_video(
+    user_id: int = Form(...),
+    video: UploadFile = File(...),
+    title: str = Form(...),
+    description: str = Form(""),
+    duration: str = Form(...),
+    uploadedDate: str = Form(...),
 
+    rpc: RPC = Depends(get_rpc),
+    config: dict = Depends(get_config),
+):
+    try:
+        UPLOAD_DIR = config["upload_dir"]
+        file_path: Path = UPLOAD_DIR / video.filename
 
-@router.get("/background/{jobid}", response_model=BackgroundTaskStatus, tags=["webserver"])
-def background_job(jobid: str):
-    if not (job := ApiBG.jobs.get(jobid)):
-        raise HTTPException(status_code=404, detail="Job not found.")
+        with file_path.open("wb") as buffer:
+            shutil.copyfileobj(video.file, buffer)
 
-    return {
-        "job_id": jobid,
-        "job_category": job["category"],
-        "status": job["status"],
-        "running": job["is_running"],
-        "progress": job.get("progress"),
-        "progress_tasks": job.get("progress_tasks"),
-        "error": job.get("error", None),
-    }
+        new_entry = rpc._rpc_add_deepfake(
+            title=title,
+            user_id=user_id,
+            description=description,
+            duration=duration,
+            file_path=str(file_path.resolve()),
+            uploadedDate=uploadedDate,
+            video_filename=video.filename
+        )
+
+        return JSONResponse(content={
+            "id": new_entry["id"],
+            "message": "Video uploaded successfully",
+            "video_filename": new_entry["video_filename"],
+        })
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Server error: {str(e)}")

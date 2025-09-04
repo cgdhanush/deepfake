@@ -8,7 +8,7 @@ import logging
 from abc import abstractmethod
 from pathlib import Path
 from typing import TYPE_CHECKING
-
+   
 from deepfake import __version__
 from deepfake.constants import Config
 from deepfake.rpc.rpc_types import RPCSendMsg
@@ -87,6 +87,7 @@ class RPC:
     def _rpc_add_deepfake(
         self,
         title: str,
+        user_id: int,
         description: str,
         duration: str,
         file_path: str,
@@ -103,6 +104,7 @@ class RPC:
             # Create video object
             video = Video(
                 title=title,
+                user_id=user_id,
                 description=description,
                 duration=float(duration),
                 file_path=file_path,

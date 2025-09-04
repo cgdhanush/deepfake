@@ -1,32 +1,40 @@
 from datetime import date, datetime
 from typing import Any, Optional
 
-from pydantic import AwareDatetime, BaseModel, RootModel, SerializeAsAny, model_validator
-from deepfake.rpc.api_server.webserver_bgwork import ProgressTask
+from pydantic import BaseModel, EmailStr
+
+
+# Pydantic Schemas
+
+class Ping(BaseModel):
+    status: str
+
+class UserCreate(BaseModel):
+    username: str
+    email: EmailStr
+    password: str
+
+class UserOut(BaseModel):
+    id: int
+    username: str
+    email: EmailStr
+
+    model_config = {
+        "from_attributes": True
+    }
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+
+class UserLogin(BaseModel):
+    username: str
+    password: str
 
 
 class StatusMsg(BaseModel):
     status: str
-
-
-class BgJobStarted(StatusMsg):
-    job_id: str
-
-
-class BackgroundTaskStatus(BaseModel):
-    job_id: str
-    job_category: str
-    status: str
-    running: bool
-    progress: float | None = None
-    progress_tasks: dict[str, ProgressTask] | None = None
-    error: str | None = None
-
-
-class BackgroundTaskResult(BaseModel):
-    error: str | None = None
-    status: str
-
 
 class ResultSchema(BaseModel):
     analysis_model: str

@@ -4,7 +4,6 @@ from uuid import uuid4
 
 from deepfake.persistence import Video
 from deepfake.persistence.models import _request_id_ctx_var
-from deepfake.rpc.api_server.webserver_bgwork import ApiBG
 from deepfake.rpc.rpc import RPC
 
 from .webserver import ApiServer
@@ -14,8 +13,7 @@ def get_rpc_optional() -> RPC | None:
         return ApiServer._rpc
     return None
 
-
-async def get_rpc() -> AsyncIterator[RPC] | None:
+async def get_rpc() -> AsyncIterator[RPC]:
     _rpc = get_rpc_optional()
     if _rpc:
         request_id = str(uuid4())
@@ -37,8 +35,4 @@ def get_config() -> dict[str, Any]:
 
 def get_api_config() -> dict[str, Any]:
     return ApiServer._config["api_server"]
-
-
-def get_message_stream():
-    return ApiServer._message_stream
 

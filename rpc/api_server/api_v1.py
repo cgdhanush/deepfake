@@ -16,16 +16,25 @@ from deepfake import __version__
 from deepfake.persistence import Video
 from deepfake.rpc import RPC
 
-from deepfake.rpc.api_server.api_schemas import DeepfakeResponse
-from deepfake.rpc.api_server.deps import get_config, get_rpc, get_rpc_optional
+from deepfake.rpc.api_server.api_schemas import DeepfakeResponse, Ping
+from deepfake.rpc.api_server.deps import get_config, get_rpc
 from deepfake.rpc.rpc import RPCException
 
 logger = logging.getLogger(__name__)
 
 API_VERSION = 2.43
 
+
+# Public API, requires no auth.
+router_public = APIRouter()
 # Private API, protected by authentication
 router = APIRouter()
+
+
+@router_public.get("/ping", response_model=Ping)
+def ping():
+    """simple ping"""
+    return {"status": "pong"}
 
 
 @router.get("/deepfakes", response_model=List[DeepfakeResponse], tags=["info"],)
@@ -48,44 +57,6 @@ def get_deepfake_by_id(deepfake_id: int):
         raise HTTPException(status_code=404, detail="Deepfake not found")
 
     return video
-
-@router.post("/upload_video")
-async def upload_video(
-    video: UploadFile = File(...),
-    title: str = Form(...),
-    description: str = Form(""),
-    duration: str = Form(...),
-    file_path: str = Form(...),
-    uploadedDate: str = Form(...),
-    
-    rpc: RPC = Depends(get_rpc),
-    config: dict = Depends(get_config),
-):
-    try:
-        UPLOAD_DIR = config["upload_dir"]
-        file_path: Path = UPLOAD_DIR / video.filename
-        
-        with file_path.open("wb") as buffer:
-            shutil.copyfileobj(video.file, buffer)
-
-        new_entry = rpc._rpc_add_deepfake(
-            title=title,
-            description=description,
-            duration=duration,
-            file_path=str(file_path.resolve()),
-            uploadedDate=uploadedDate,
-            video_filename=video.filename
-        )
-
-        return JSONResponse(content={
-            "id": new_entry["id"],
-            "message": "Video uploaded successfully",
-            "video_filename":new_entry["video_filename"],
-        })
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Server error: {str(e)}")
-
 
 @router.delete("/deepfakes/{deepfake_id}")
 def delete_deepfake_endpoint(deepfake_id: int,  rpc: RPC = Depends(get_rpc)):

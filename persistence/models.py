@@ -13,7 +13,7 @@ from sqlalchemy.pool import StaticPool
 
 from deepfake.exceptions import OperationalException
 from deepfake.persistence.base import ModelBase
-from deepfake.persistence.data_model import Video, Result
+from deepfake.persistence.data_model import Video, Result, User
 
 
 logger = logging.getLogger(__name__)
@@ -69,6 +69,7 @@ def init_db(db_url: str) -> None:
     Video.session = scoped_session(
         sessionmaker(bind=engine, autoflush=False), scopefunc=get_request_or_thread_id
     )
+    User.session = Video.session
     Result.session = Video.session
     ModelBase.metadata.create_all(engine)
     

@@ -8,6 +8,23 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
+class User(ModelBase):
+    __tablename__ = "users"
+    session: ClassVar[SessionType]
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    username: Mapped[str] = mapped_column(String, unique=True, index=True, nullable=False)
+    email: Mapped[str] = mapped_column(String, unique=True, index=True, nullable=False)
+    hashed_password: Mapped[str] = mapped_column(String, nullable=False)
+
+    # One user can have many videos
+    videos: Mapped[list["Video"]] = relationship("Video", back_populates="user", cascade="all, delete-orphan")
+
+    def __repr__(self):
+        return f"User(id={self.id}, username={self.username})"
+
+
 class LocalVideo:
     id: int
     title: str
@@ -20,11 +37,12 @@ class LocalVideo:
 
     def __repr__(self):
         return f"Video(id={self.id}, title={self.title})"
-    
+
     def __init__(self, **kwargs):
         for key in kwargs:
             setattr(self, key, kwargs[key])
-    
+
+
 class Video(ModelBase, LocalVideo):
     __tablename__ = "videos"
     session: ClassVar[SessionType]
@@ -38,12 +56,18 @@ class Video(ModelBase, LocalVideo):
     uploadedDate: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.now)
     video_filename: Mapped[Optional[str]] = mapped_column(String)
 
+    # Foreign key to User
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+
+    # Many videos belong to one user
+    user: Mapped["User"] = relationship("User", back_populates="videos")
+
     # One-to-one relationship
     result: Mapped[Optional["Result"]] = relationship("Result", back_populates="video", uselist=False, cascade="all, delete-orphan")
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-            
+
     def __repr__(self):
         return f"Video(id={self.id}, title={self.title})"
 
@@ -54,7 +78,6 @@ class Video(ModelBase, LocalVideo):
     @staticmethod
     def rollback():
         Video.session.rollback()
-
 
 
 class Result(ModelBase):

@@ -13,7 +13,6 @@ from starlette.responses import JSONResponse
 from deepfake.constants import Config
 from deepfake.exceptions import OperationalException
 from deepfake.rpc.api_server.uvicorn_threaded import UvicornServer
-from deepfake.rpc.api_server.webserver_bgwork import ApiBG
 from deepfake.rpc.rpc import RPC, RPCException, RPCHandler
 from deepfake.rpc.rpc_types import RPCSendMsg
 
@@ -83,7 +82,6 @@ class ApiServer(RPCHandler):
         ApiServer._has_rpc = False
         del ApiServer._rpc
 
-        ApiBG.jobs = {}
         if self._server and not self._standalone:
             logger.info("Stopping API Server")
             # self._server.force_exit, self._server.should_exit = True, True
@@ -104,32 +102,54 @@ class ApiServer(RPCHandler):
             status_code=502, content={"error": f"Error querying {request.url.path}: {exc.message}"}
         )
 
+    def handle_unexpected_exception(self, request, exc: Exception):
+        logger.exception(f"Unhandled exception on {request.method} {request.url.path}")
+        return JSONResponse(
+            status_code=500,
+            content={"error": "An unexpected error occurred."}
+        )
+
+
     def configure_app(self, app: FastAPI, config):
+        from deepfake.rpc.api_server.api_auth import get_current_user, router_login
         from deepfake.rpc.api_server.api_background_tasks import router as api_bg_tasks
         from deepfake.rpc.api_server.api_v1 import router as api_v1
+        from deepfake.rpc.api_server.api_v1 import router_public as api_v1_public
         from deepfake.rpc.api_server.web_ui import router_ui
-        
+        from deepfake.rpc.rpc import RPCException
+
+        # Public
+        app.include_router(api_v1_public, prefix="/api")
+
+        # Auth
+        app.include_router(router_login, prefix="/api", tags=["auth"])
+
+        # Protected
         app.include_router(
             api_v1,
             prefix="/api",
         )
+        
         app.include_router(
             api_bg_tasks,
             prefix="/api",
         )
-        # UI Router MUST be last!
-        app.include_router(router_ui, prefix="")
+
+        app.include_router(router_ui, prefix="", include_in_schema=False)
 
         app.add_middleware(
             CORSMiddleware,
-            allow_origins=config["api_server"].get("CORS_origins", []),
+            allow_origins=config.get("api_server", {}).get("CORS_origins", ["*"]),
             allow_credentials=True,
             allow_methods=["*"],
             allow_headers=["*"],
         )
 
+        # Exception Handlers
         app.add_exception_handler(RPCException, self.handle_rpc_exception)
-        
+        app.add_exception_handler(Exception, self.handle_unexpected_exception)  # Catch-all
+
+
     def start_api(self):
         """
         Start API ... should be run in thread.
@@ -152,7 +172,7 @@ class ApiServer(RPCHandler):
             self.app,
             port=rest_port,
             host=rest_ip,
-            use_colors=False,
+            use_colors=True,
             log_config=None,
             access_log=True if verbosity != "error" else False,
             ws_ping_interval=None,  # We do this explicitly ourselves
