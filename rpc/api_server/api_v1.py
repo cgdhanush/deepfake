@@ -1,23 +1,18 @@
 import logging
-import json
-from copy import deepcopy
-from pathlib import Path
-from typing import Annotated, List
-from uuid import uuid4
-import shutil
-from datetime import datetime
+from typing import List
 from sqlalchemy.orm import joinedload
 
-from fastapi import APIRouter, Depends, Query, File, Form, UploadFile, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.exceptions import HTTPException
-from fastapi.responses import JSONResponse
 
 from deepfake import __version__
 from deepfake.persistence import Video
+from deepfake.persistence.data_model import User
 from deepfake.rpc import RPC
 
-from deepfake.rpc.api_server.api_schemas import DeepfakeResponse, Ping
-from deepfake.rpc.api_server.deps import get_config, get_rpc
+from deepfake.rpc.api_server.api_auth import get_current_user
+from deepfake.rpc.api_server.api_schemas import DeepfakeResponse, Ping, UserOut
+from deepfake.rpc.api_server.deps import get_rpc
 from deepfake.rpc.rpc import RPCException
 
 logger = logging.getLogger(__name__)
@@ -38,29 +33,23 @@ def ping():
 
 
 @router.get("/deepfakes", response_model=List[DeepfakeResponse], tags=["info"],)
-def deepfakes(rpc: RPC = Depends(get_rpc)):
+def deepfakes(rpc: RPC = Depends(get_rpc), user: UserOut = Depends(get_current_user)):
     try:
-        return rpc._rpc_deepfakes()
+        return rpc._rpc_deepfakes(user)
     except RPCException:
         return []
 
 @router.get("/deepfakes/{deepfake_id}", response_model=DeepfakeResponse, tags=["info"])
-def get_deepfake_by_id(deepfake_id: int):
-    video = (
-        Video.session.query(Video)
-        .options(joinedload(Video.result))
-        .filter(Video.id == deepfake_id)
-        .first()
-    )
-
-    if not video:
-        raise HTTPException(status_code=404, detail="Deepfake not found")
-
-    return video
+def get_deepfake_by_id(deepfake_id: int, rpc: RPC = Depends(get_rpc), user: UserOut = Depends(get_current_user)):
+   
+    try:
+        return rpc._rpc_deepfake_by_id(user, deepfake_id)
+    except RPCException:
+        return []
 
 @router.delete("/deepfakes/{deepfake_id}")
-def delete_deepfake_endpoint(deepfake_id: int,  rpc: RPC = Depends(get_rpc)):
-    success = rpc._rpc_delete_deepfake(deepfake_id)
+def delete_deepfake_endpoint(deepfake_id: int,  rpc: RPC = Depends(get_rpc), user: UserOut = Depends(get_current_user)):
+    success = rpc._rpc_delete_deepfake(user, deepfake_id)
     if not success:
         raise HTTPException(status_code=404, detail="Deepfake not found")
     return {"message": "Deepfake deleted successfully"}

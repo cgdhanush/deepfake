@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING
    
 from deepfake import __version__
 from deepfake.constants import Config
+from deepfake.rpc.api_server.api_schemas import UserOut
 from deepfake.rpc.rpc_types import RPCSendMsg
 from deepfake.persistence import Video, Result  # Make sure these are correct paths
 
@@ -74,15 +75,30 @@ class RPC:
         self._deepfake = deepfake
         self._config = deepfake.config
 
-    def _rpc_deepfakes(self) -> list[Video]:
+    def _rpc_deepfakes(self, user: UserOut) -> list[Video]:
         """
         Get all stored deepfake video entries
         """
         return (
-        Video.session.query(Video)
-        .options(joinedload(Video.result))  # Eagerly load the result relationship
-        .all()
-    )
+            Video.session.query(Video)
+            .join(Video.result)
+            .options(joinedload(Video.result))
+            .filter(
+                Video.user_id == user.id
+            )
+            .all()
+        )
+
+    def _rpc_deepfake_by_id(self, user: UserOut, deepfake_id: int):
+        return (
+            Video.session.query(Video)
+            .options(joinedload(Video.result))
+            .filter(
+                Video.user_id == user.id,
+                Video.id == deepfake_id
+            )
+            .one_or_none()
+        )
 
     def _rpc_add_deepfake(
         self,
@@ -124,21 +140,26 @@ class RPC:
             Video.session.rollback()
             raise RuntimeError(f"Failed to add deepfake: {str(e)}")
 
-    def _rpc_delete_deepfake(self, deepfake_id: int) -> bool:
+    def _rpc_delete_deepfake(self, user: UserOut, deepfake_id: int) -> bool:
         """
         Delete a deepfake video entry by ID
         """
         try:
-            video = Video.session.query(Video).filter_by(id=deepfake_id).first()
+            video = Video.session.query(Video).filter(
+                Video.id == deepfake_id,
+                Video.user_id == user.id
+            ).first()
+
             if not video:
                 return False
 
-            Video.session.delete(video)  # Result will be deleted via cascade
+            Video.session.delete(video)  # Result deleted via cascade
             Video.session.commit()
             return True
 
         except Exception as e:
             Video.session.rollback()
+            logger.error(f"Failed to delete deepfake video {deepfake_id} for user {user.id}: {e}")
             raise RuntimeError(f"Failed to delete deepfake: {str(e)}")
 
     def _rpc_dummy_analysis(self) -> Result:

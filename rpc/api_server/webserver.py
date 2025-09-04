@@ -13,7 +13,7 @@ from starlette.responses import JSONResponse
 from deepfake.constants import Config
 from deepfake.exceptions import OperationalException
 from deepfake.rpc.api_server.uvicorn_threaded import UvicornServer
-from deepfake.rpc.rpc import RPC, RPCException, RPCHandler
+from deepfake.rpc import RPC, RPCHandler
 from deepfake.rpc.rpc_types import RPCSendMsg
 
 

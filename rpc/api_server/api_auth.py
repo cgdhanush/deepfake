@@ -1,9 +1,10 @@
 import logging
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
+from fastapi.security import HTTPBasicCredentials, OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
+from fastapi.security.http import HTTPBasic
 
 from deepfake.persistence import User
 from deepfake.rpc.api_server.api_schemas import Token, UserCreate, UserOut, UserLogin
@@ -15,14 +16,17 @@ ALGORITHM = "HS256"
 SECRET_KEY = get_api_config().get("jwt_secret_key")
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
+router_login = APIRouter()
+
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# OAuth2 token URL
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")  # your login endpoint
-router_login = APIRouter()
+httpbasic = HTTPBasic(auto_error=False)
+security = HTTPBasic()
 
-current_token: str =  None
+# OAuth2 token URL
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login", auto_error=False)
+
 
 # Utility functions
 def get_password_hash(password: str) -> str:
@@ -49,19 +53,20 @@ def authenticate_user(username: str, password: str):
         return False
     return user
 
-# Dependency to get current user from token
-async def get_current_user():
+async def get_current_user(token: str = Depends(oauth2_scheme)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+    if not token:
+        raise credentials_exception  # If auto_error=False and no token provided
+
     try:
-        if not current_token is None:
-            payload = jwt.decode(current_token, SECRET_KEY, algorithms=[ALGORITHM])
-            username: str | None = payload.get("sub")
-            if username is None:
-                raise credentials_exception
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str | None = payload.get("sub")
+        if username is None:
+            raise credentials_exception
     except JWTError:
         raise credentials_exception
     user = get_user(username)
@@ -95,10 +100,6 @@ def login(form_data: OAuth2PasswordRequestForm = Depends()):
         raise HTTPException(status_code=400, detail="Incorrect username or password")
     
     access_token = create_access_token(data={"sub": user.username})
-    
-    global current_token
-    current_token = access_token
-    
     return {"access_token": access_token, "token_type": "bearer"}
 
 @router_login.get("/users/me", response_model=UserOut)

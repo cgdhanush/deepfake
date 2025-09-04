@@ -25,7 +25,7 @@ class DeepFake:
         """
         Start the Webserver to test.
         """
-        from deepfake.rpc.api_server import ApiServer
+        from deepfake.rpc.api_server.webserver import ApiServer
         from deepfake.rpc import RPC
         
         # Start the Websrver

@@ -1,1 +1,1 @@
-from deepfake.rpc.rpc import RPC
+from deepfake.rpc.rpc import RPC, RPCHandler, RPCException
