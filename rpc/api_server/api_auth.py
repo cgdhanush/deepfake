@@ -1,6 +1,6 @@
 import logging
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import HTTPBasicCredentials, OAuth2PasswordRequestForm, OAuth2PasswordBearer
+from fastapi import APIRouter, Depends, HTTPException, status, Response
+from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
@@ -94,12 +94,19 @@ def signup(user_in: UserCreate):
     return user
 
 @router_login.post("/auth/login", response_model=Token)
-def login(form_data: OAuth2PasswordRequestForm = Depends()):
+def login(response: Response,form_data: OAuth2PasswordRequestForm = Depends()):
     user = authenticate_user(form_data.username, form_data.password)
     if not user:
         raise HTTPException(status_code=400, detail="Incorrect username or password")
     
     access_token = create_access_token(data={"sub": user.username})
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        samesite="Lax",  # or "None" if cross-site
+        secure=True      # only over HTTPS
+    )
     return {"access_token": access_token, "token_type": "bearer"}
 
 @router_login.get("/users/me", response_model=UserOut)
