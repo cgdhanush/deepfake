@@ -10,5 +10,9 @@ USER_DATA_DIR = "user_data"
 DATA_DIR = "data_dir"
 UPLOAD_DIR = "upload_dir"
 
-USER_DATA_FILES = ["config.json"]
+# Source files with destination directories within user-directory
+USER_DATA_FILES = {
+    "shape_predictor_81_face_landmarks.dat": "models"
+}
+
 Config = dict[str, Any]

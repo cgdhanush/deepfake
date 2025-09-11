@@ -19,8 +19,8 @@ def create_datadir(config: dict, datadir: str | None = None) -> Path:
         logger.info(f"Created data directory: {folder}")
 
     # Create 'real' and 'fake' subdirectories
-    real_dir = folder / "real"
-    fake_dir = folder / "fake"
+    real_dir = folder / "original"
+    fake_dir = folder / "deepfake"
 
     for subfolder in [real_dir, fake_dir]:
         if not subfolder.is_dir():
@@ -30,10 +30,45 @@ def create_datadir(config: dict, datadir: str | None = None) -> Path:
     return folder
 
 
+def create_img_dir(config: dict, img_dir: str | None = None) -> Path:
+    # Determine the base data folder
+    folder = Path(img_dir) if img_dir else Path(f"{config['user_data_dir']}/images")
+    
+    # Create the main data directory if it doesn't exist
+    if not folder.is_dir():
+        folder.mkdir(parents=True)
+        logger.info(f"Created data directory: {folder}")
+
+    # Create subdirectories
+    test_dir = folder / "test"
+    train_dir = folder / "train"
+    temp_dir = folder / "temp"
+
+    for subfolder in [test_dir, train_dir, temp_dir]:
+        if not subfolder.is_dir():
+            subfolder.mkdir(parents=True)
+            logger.info(f"Created subdirectory: {subfolder}")
+
+    return folder
+
+def create_dir(config: dict, dir_name: str | None = None) -> Path:
+    # Determine the base data folder
+    folder = Path(dir_name)
+    
+    # Create the main data directory if it doesn't exist
+    if not folder.is_dir():
+        folder.mkdir(parents=True)
+        logger.info(f"Created directory: {folder}")
+
+    return folder
+
+
+
 def create_userdata_dir(directory: str, create_dir: bool = False) -> Path:
     sub_dirs = [
         "results",
         "data",
+        "models",
         "uploads",
         "logs",
     ]
@@ -70,8 +105,10 @@ def copy_sample_files(directory: Path, overwrite: bool = False) -> None:
     if not directory.is_dir():
         raise OperationalException(f"Directory `{directory}` does not exist.")
     sourcedir = Path(__file__).parents[1] / "templates"
-    for source in USER_DATA_FILES:
-        targetdir = directory
+    shutil.copy(str(sourcedir / "config.json"), str(directory / "config.json"))
+    
+    for source, target in USER_DATA_FILES.items():
+        targetdir = directory / target
         if not targetdir.is_dir():
             raise OperationalException(f"Directory `{targetdir}` does not exist.")
         targetfile = targetdir / source
@@ -81,3 +118,4 @@ def copy_sample_files(directory: Path, overwrite: bool = False) -> None:
                 continue
             logger.warning(f"File `{targetfile}` exists already, overwriting.")
         shutil.copy(str(sourcedir / source), str(targetfile))
+

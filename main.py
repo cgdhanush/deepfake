@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
 """
 Main Deepfake bot script.
-Read the documentation to know what CLI arguments you need.
+Run with --help to see available commands.
 """
 
-import argparse
 import logging
 import sys
 
-from deepfake import __version__
-from deepfake.deepfake import DeepFake, start_create_userdir
+from deepfake.deepfake import (
+    DeepFake,
+    start_create_userdir,
+    Arguments
+)
 from deepfake.exceptions import DeepfakeException
 from deepfake.loggers import setup_logging_pre
 from deepfake.system import gc_set_threshold, print_version_info
@@ -18,44 +20,37 @@ logger = logging.getLogger("deepfake")
 
 
 def main() -> None:
-    """Initiate the DeepFake bot and start the appropriate command."""
+    """
+    Initiate the DeepFake bot and start the appropriate command.
+    """
     return_code: int = 1
 
     try:
         setup_logging_pre()
         gc_set_threshold()
 
-        parser = argparse.ArgumentParser(description="DeepFake WebApp Control")
-        subparsers = parser.add_subparsers(dest="command", required=True)
+        arguments = Arguments(sys.argv[1:])
+        args = arguments.get_parsed_arg()
 
-        # Define subcommands
-        subparsers.add_parser("start", help="Start the web application")
-        subparsers.add_parser("train", help="Start training the model")
-        subparsers.add_parser("create-userdir", help="Create user-data directory")
-
-        # Global optional flags
-        parser.add_argument("--version", "-v", action="store_true", help="Show the version")
-
-        args = parser.parse_args()
-
-        if args.version:
+        # Handle global version flag
+        if args.get("version_main"):
             print_version_info()
             return_code = 0
 
-        else:
-            match args.command:
-                case "start":
-                    deepfake = DeepFake()
-                    deepfake.startup()
-                    
-                case "train":
-                    deepfake = DeepFake()
-                    deepfake.startup()  
-                    
-                case "create-userdir":
-                    start_create_userdir()
+        # Command dispatch
+        elif args.get("command") == "start":
+            DeepFake().startup()
 
-    except SystemExit as e:  # Exiting normally (argparse)
+        elif args.get("command") == "train":
+            DeepFake().start_train()
+
+        elif args.get("command") == "predict":
+            DeepFake().start_predict()
+            
+        elif args.get("command") == "create-userdir":
+            start_create_userdir()
+
+    except SystemExit as e:
         return_code = e.code
     except KeyboardInterrupt:
         logger.info("SIGINT received, aborting...")
@@ -65,7 +60,6 @@ def main() -> None:
         return_code = 2
     except Exception:
         logger.exception("Fatal exception!")
-
     finally:
         sys.exit(return_code)
 

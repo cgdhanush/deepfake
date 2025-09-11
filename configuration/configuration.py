@@ -7,7 +7,12 @@ from pathlib import Path
 from typing import Any
 
 from deepfake import constants
-from deepfake.configuration.directory_operations import create_datadir, create_userdata_dir
+from deepfake.configuration.directory_operations import (
+    create_datadir, 
+    create_userdata_dir,
+    create_dir,
+    create_img_dir
+)
 from deepfake.configuration.load_config import load_file
 from deepfake.constants import Config
 
@@ -44,15 +49,14 @@ class Configuration:
         """
         # Load all configs
         config: Config = {}
-        self._process_datadir(config)
 
-        file_path = Path(config['user_data_dir']) / "config.json"
+        file_path = Path("user_data") / "config.json"
         config: Config = load_file(file_path)
-       
-        self._process_db(config)
 
         self._process_logging(config)
 
+        self._process_db(config)
+        
         self._process_datadir(config)
         
         return config
@@ -85,5 +89,11 @@ class Configuration:
         config.update({"datadir": create_datadir(config)})
         logger.info("Using data directory: %s ...", config.get("datadir"))
 
+        config.update({"imgdir": create_img_dir(config)})
+        logger.info("Using img directory: %s ...", config.get("imgdir"))
+        
+        config.update({"modelsdir": config["user_data_dir"] / "models"})
+        logger.info("Using models directory: %s ...", config.get("modelsdir"))
+        
         # uplaod path 
         config.update({"upload_dir": config["user_data_dir"] / "uploads"})
