@@ -105,16 +105,16 @@ def extract_frames(config: dict):
 
     datasets = config["datasets"]
     compression = config["compression"]
-    videos_path = config["datadir"] / "original"
+    videos_path = config["datadir"]
     mode: str = config["mode"]  # "train" or "test"
     save_images_path = config["imgdir"] / mode
    
 
     for dataset in datasets:
         for comp in compression:
-            video_list = parse_video_path(videos_path, dataset, comp)
+            video_list = parse_video_path(str(videos_path), dataset, comp)
             for video_path in tqdm(video_list, desc=f"Processing {dataset}"):
-                preprocess_video(video_path, save_images_path, face_detector, face_predictor)
+                preprocess_video(str(video_path), str(save_images_path), face_detector, face_predictor)
 
     # Save metadata JSON
     os.makedirs(save_images_path, exist_ok=True)

@@ -3,6 +3,7 @@ This module contains class to define a RPC communications
 """
 
 from datetime import datetime
+import os
 from sqlalchemy.orm import joinedload
 import logging
 from abc import abstractmethod
@@ -100,19 +101,20 @@ class RPC:
             .one_or_none()
         )
 
-    def _rpc_video_analysis(self, file_path: str):
-        
+    def _rpc_video_analysis(self, file_path: str) -> Result:
+        normalized_path = str(Path(file_path).resolve())
+
         model_name = self._deepfake.config["model_name"]
-        _result = self._deepfake.predictor.predict_video(file_path)
+        _result = self._deepfake.predictor.predict_video(normalized_path)
         label = _result["label"]
-        
-        Result(
+
+        return Result(
             analysis_model=model_name,
             detection_score=_result["confidence"],
             deepfake_detected=True if label == "Fake" else False,
-            confidence="HIGH" if _result["confidence"] > 0.5 else "LOW" 
+            confidence="HIGH" if _result["confidence"] > 0.5 else "LOW"
         )
-
+        
     def _rpc_add_deepfake(
         self,
         title: str,
@@ -124,11 +126,10 @@ class RPC:
         video_filename: str
     ) -> dict:
         """
-        Add a new deepfake video with dummy analysis
+        Add a new deepfake video with analysis result
         """
         try:
-            # Create dummy result
-            # result = self._rpc_dummy_analysis()
+            # Run deepfake analysis
             result = self._rpc_video_analysis(file_path)
 
             # Create video object
@@ -154,6 +155,17 @@ class RPC:
             Video.session.rollback()
             raise RuntimeError(f"Failed to add deepfake: {str(e)}")
 
+    def _rpc_dummy_analysis(self) -> Result:
+        """
+        Returns a dummy Result instance
+        """
+        return Result(
+            analysis_model="MockDeepfakeDetector_v1",
+            detection_score=0.92,
+            deepfake_detected=True,
+            confidence="HIGH"
+        )
+
     def _rpc_delete_deepfake(self, user: UserOut, deepfake_id: int) -> bool:
         """
         Delete a deepfake video entry by ID
@@ -175,14 +187,3 @@ class RPC:
             Video.session.rollback()
             logger.error(f"Failed to delete deepfake video {deepfake_id} for user {user.id}: {e}")
             raise RuntimeError(f"Failed to delete deepfake: {str(e)}")
-
-    def _rpc_dummy_analysis(self) -> Result:
-        """
-        Returns a dummy Result instance
-        """
-        return Result(
-            analysis_model="MockDeepfakeDetector_v1",
-            detection_score=0.92,
-            deepfake_detected=True,
-            confidence="high"
-        )

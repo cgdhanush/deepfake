@@ -1,6 +1,12 @@
-{   
+{   "models": {
+        "cnn_backbone": "resnet18",
+        "vit_backbone": "vit_base_patch16_224"
+    },
+    "model_name": "DeepfakeDetector_v1",
+
     "datasets": [
-        "Original", 
+        "Actors",
+        "Youtube", 
         "FaceSwap", 
         "FaceShifter", 
         "Face2Face", 
@@ -8,7 +14,7 @@
         "NeuralTextures"
     ],
     "compression": ["raw","c40"],
-
+    
     "api_server": {
         "listen_ip_address": "127.0.0.1",
         "listen_port": 8080,
@@ -16,5 +22,6 @@
         "jwt_secret_key": "f60d8a2b8e6307dbb2e9165db4640af1aef5b7fca99ecb63f8e61c7a9c1515f5",
         "CORS_origins": []
     },
-    "verbosity": 0
+    "verbosity": 0,
+    "mode": "train"
 }

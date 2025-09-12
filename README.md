@@ -1,38 +1,84 @@
+
+
 # Deepfake Detection
 
-Major project on detecting face swaps and deepfakes using Python and machine learning libraries.
+## Features
+
+* 🎥 **Face Extraction**: Automatically extracts faces from video frames for training/testing.
+* 🤖 **Deep Learning Model**: Trains a model to differentiate between real and fake faces.
+* 🧪 **Testing & Evaluation**: Evaluate model performance on a test dataset.
+* 🌐 **FastAPI Web App**: Upload a video and detect deepfakes through a user-friendly web interface.
+* 🗂️ **User Data Management**: Automatically manages user directories and video uploads.
+* 🧩 **Modular Design**: Easy to extend and debug.
 
 ---
 
 ## 🔧 Setup Instructions
 
-### 1. Clone the repository (if applicable)
+### 1. Clone the Repository
+
 ```bash
 git clone https://github.com/cgdhanush/deepfake
+cd deepfake
 ```
+
 ### 2. Create a Conda Environment
 
-```
+```bash
 conda create --name deepfake python=3.11 -y
 conda activate deepfake
 ```
 
 ### 3. Install Dependencies
 
-````
-pip install -r deepfake/requirements.txt
-````
+```bash
+pip install -r requirements.txt
+```
 
-### 3. Create User Directory
+### 4. Create User Directory (for storing datasets and results)
 
-````
-python -m deepfake create-userdir   
-````
+```bash
+python -m deepfake create-userdir
+```
+
 ---
 
+---
 
-## 🚀 Run the Project
+## 🚀 Running the Project
 
+> ⚠️ **Ensure the dataset is placed in the `user_data/data` folder before proceeding.**
+
+### 1. Extract Faces from Dataset
+
+Extract frames and faces from videos for training or testing:
+
+```bash
+python -m deepfake extract --mode train   # or use 'test' for testing data
 ```
+
+### 2. Train the Model
+
+```bash
+python -m deepfake train
+```
+
+### 3. Test the Model
+
+```bash
+python -m deepfake test
+```
+
+### 4. Launch the Web App
+
+```bash
 python -m deepfake start
 ```
+
+This command starts the FastAPI server. Visit `http://localhost:8000` to:
+
+* Sign up or log in
+* Upload videos
+* View detection results
+
+---

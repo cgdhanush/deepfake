@@ -27,6 +27,7 @@ class Arguments:
 
         self.subparsers.add_parser("start", help="Start the web application")
         self.subparsers.add_parser("train", help="Start training the model")
+        self.subparsers.add_parser("test", help="Start testing the model")
         self.subparsers.add_parser("predict", help="Start Predict the Video")
         # For extract, add --mode argument
         extract_parser = self.subparsers.add_parser("extract", help="Start Extract Frames from Video Files to Images")

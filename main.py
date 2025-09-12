@@ -44,6 +44,9 @@ def main() -> None:
         elif args.get("command") == "train":
             DeepFake().start_train()
 
+        elif args.get("command") == "test":
+            DeepFake().start_test()
+            
         elif args.get("command") == "predict":
             DeepFake().start_predict()
         
