@@ -15,4 +15,6 @@ USER_DATA_FILES = {
     "shape_predictor_81_face_landmarks.dat": "models"
 }
 
+FACE_PREDICTOR_NAME = "shape_predictor_81_face_landmarks.dat"
+
 Config = dict[str, Any]

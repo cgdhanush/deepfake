@@ -7,10 +7,10 @@ Run with --help to see available commands.
 import logging
 import sys
 
+from deepfake.arguments import Arguments
 from deepfake.deepfake import (
     DeepFake,
-    start_create_userdir,
-    Arguments
+    start_create_userdir
 )
 from deepfake.exceptions import DeepfakeException
 from deepfake.loggers import setup_logging_pre
@@ -46,6 +46,10 @@ def main() -> None:
 
         elif args.get("command") == "predict":
             DeepFake().start_predict()
+        
+        elif args.get("command") == "extract":
+            mode = args.get("mode")
+            DeepFake().start_extract_frames(mode)
             
         elif args.get("command") == "create-userdir":
             start_create_userdir()

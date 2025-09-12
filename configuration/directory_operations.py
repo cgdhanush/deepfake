@@ -20,7 +20,7 @@ def create_datadir(config: dict, datadir: str | None = None) -> Path:
 
     # Create 'real' and 'fake' subdirectories
     real_dir = folder / "original"
-    fake_dir = folder / "deepfake"
+    fake_dir = folder / "manipulated"
 
     for subfolder in [real_dir, fake_dir]:
         if not subfolder.is_dir():

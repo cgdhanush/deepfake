@@ -100,6 +100,19 @@ class RPC:
             .one_or_none()
         )
 
+    def _rpc_video_analysis(self, file_path: str):
+        
+        model_name = self._deepfake.config["model_name"]
+        _result = self._deepfake.predictor.predict_video(file_path)
+        label = _result["label"]
+        
+        Result(
+            analysis_model=model_name,
+            detection_score=_result["confidence"],
+            deepfake_detected=True if label == "Fake" else False,
+            confidence="HIGH" if _result["confidence"] > 0.5 else "LOW" 
+        )
+
     def _rpc_add_deepfake(
         self,
         title: str,
@@ -115,7 +128,8 @@ class RPC:
         """
         try:
             # Create dummy result
-            result = self._rpc_dummy_analysis()
+            # result = self._rpc_dummy_analysis()
+            result = self._rpc_video_analysis(file_path)
 
             # Create video object
             video = Video(
