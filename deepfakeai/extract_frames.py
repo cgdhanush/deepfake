@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import random
 import cv2
 import json
 import dlib
@@ -7,7 +8,9 @@ import logging
 import numpy as np
 from glob import glob
 from tqdm import tqdm
-from imutils import face_utils
+import multiprocessing
+# from imutils import face_utils
+from functools import partial
 
 from deepfake.constants import FACE_PREDICTOR_NAME
 
@@ -16,13 +19,14 @@ logger = logging.getLogger(__name__)
 # ====== Configuration ======
 NUM_FRAMES = 1
 IMG_META_DICT = dict()
+TEST_LIMIT = 200
 
 # ====== Helper Functions ======
-def parse_video_path(videos_path: str, dataset: str, compression: str):
+def parse_video_path(videos_path: str, dataset: str):
     if dataset in ["Actors", "Youtube"]:
-        dataset_path = f'{videos_path}/original/{dataset}/{compression}/videos/'
+        dataset_path = f'{videos_path}/original/{dataset}/'
     else:
-        dataset_path = f'{videos_path}/manipulated/{dataset}/{compression}/videos/'
+        dataset_path = f'{videos_path}/manipulated/{dataset}/'
 
     movies_path_list = sorted(glob(dataset_path + '*.mp4'))
     
@@ -97,26 +101,55 @@ def preprocess_video(video_path, save_images_path, face_detector, face_predictor
 
 # ====== Extract Frames ======
 
-def extract_frames(config: dict):
+def process_video(video_path, save_images_path, face_detector, face_predictor):
+    preprocess_video(str(video_path), str(save_images_path), face_detector, face_predictor)
     
+def extract_frames(config: dict):
     predictor_path = config["modelsdir"] / FACE_PREDICTOR_NAME
     face_detector = dlib.get_frontal_face_detector()
     face_predictor = dlib.shape_predictor(str(predictor_path))
 
     datasets = config["datasets"]
-    compression = config["compression"]
     videos_path = config["datadir"]
-    mode: str = config["mode"]  # "train" or "test"
-    save_images_path = config["imgdir"] / mode
-   
+    save_images_path = config["imgdir"]
+
+    train_size_pcr = config.get("train_size_pcr", 0.8)
+
+    video_paths_to_process = []
 
     for dataset in datasets:
-        for comp in compression:
-            video_list = parse_video_path(str(videos_path), dataset, comp)
-            for video_path in tqdm(video_list, desc=f"Processing {dataset}"):
-                preprocess_video(str(video_path), str(save_images_path), face_detector, face_predictor)
+       
+        video_list = parse_video_path(str(videos_path), dataset)
 
-    # Save metadata JSON
-    os.makedirs(save_images_path, exist_ok=True)
+        # Split dataset into 80% train and 20% test
+        train_size = int(train_size_pcr * len(video_list))
+        test_size = len(video_list) - train_size
+
+        train_videos = random.sample(video_list, train_size)
+        test_videos = [v for v in video_list if v not in train_videos]
+
+        # Process train videos
+        train_path = save_images_path / "train"
+        os.makedirs(train_path, exist_ok=True)
+        for video_path in train_videos:
+            video_paths_to_process.append((video_path, train_path))
+
+        # Process test videos
+        test_path = save_images_path / "test"
+        os.makedirs(test_path, exist_ok=True)
+        for video_path in test_videos:
+            video_paths_to_process.append((video_path, test_path))
+
+    pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
+    process_fn = partial(process_video, face_detector=face_detector, face_predictor=face_predictor)
+
+    with tqdm(total=len(video_paths_to_process), desc="Processing videos") as pbar:
+        for video_path, save_path in pool.imap_unordered(process_fn, video_paths_to_process):
+            process_video(video_path, save_path, face_detector, face_predictor)
+            pbar.update(1)
+
     with open(os.path.join(save_images_path, "ldm.json"), 'w') as f:
         json.dump(IMG_META_DICT, f, indent=4)
+
+    pool.close()
+    pool.join()

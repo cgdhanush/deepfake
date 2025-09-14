@@ -32,15 +32,15 @@ def ping():
     return {"status": "pong"}
 
 
-@router.get("/deepfakes", response_model=List[DeepfakeResponse], tags=["info"],)
+@router.get("/deepfakes", tags=["info"],)
 def deepfakes(rpc: RPC = Depends(get_rpc), user: UserOut = Depends(get_current_user)):
     try:
         return rpc._rpc_deepfakes(user)
     except RPCException:
         return []
 
-@router.get("/deepfakes/{deepfake_id}", response_model=DeepfakeResponse, tags=["info"])
-def get_deepfake_by_id(deepfake_id: int, rpc: RPC = Depends(get_rpc), user: UserOut = Depends(get_current_user)):
+@router.get("/deepfakes/{deepfake_id}", tags=["info"])
+def get_deepfake_by_id(deepfake_id: str, rpc: RPC = Depends(get_rpc), user: UserOut = Depends(get_current_user)):
    
     try:
         return rpc._rpc_deepfake_by_id(user, deepfake_id)
@@ -48,7 +48,7 @@ def get_deepfake_by_id(deepfake_id: int, rpc: RPC = Depends(get_rpc), user: User
         return []
 
 @router.delete("/deepfakes/{deepfake_id}")
-def delete_deepfake_endpoint(deepfake_id: int,  rpc: RPC = Depends(get_rpc), user: UserOut = Depends(get_current_user)):
+def delete_deepfake_endpoint(deepfake_id: str,  rpc: RPC = Depends(get_rpc), user: UserOut = Depends(get_current_user)):
     success = rpc._rpc_delete_deepfake(user, deepfake_id)
     if not success:
         raise HTTPException(status_code=404, detail="Deepfake not found")

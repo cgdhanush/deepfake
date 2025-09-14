@@ -15,6 +15,12 @@ class Predictor:
         model_name = f"{config['model_name']}.pth"
         model_path = os.path.join(str(models_dir), model_name)
         
+        if not os.path.exists(model_path):
+            raise FileNotFoundError(
+                f"Model file {model_name} not found in {models_dir},"
+                f" Please train or download the model first."
+            )
+        
         self.model = CNN_ViT_LSTM().to(self.device)
         self.model.load_state_dict(torch.load(model_path, map_location=self.device))
         self.model.eval()
@@ -25,23 +31,32 @@ class Predictor:
             transforms.ToTensor()
         ])
 
+
     def predict_image(self, image_path):
         """ 
-        Predict single image (Real / Fake)
+        Predict single image (Real / Fake) and return detection scores
         """
         img = Image.open(image_path).convert("RGB")
         img = self.transform(img).unsqueeze(0).unsqueeze(1).to(self.device)  # [B, Seq, C, H, W]
 
         with torch.no_grad():
             output = self.model(img)
-            probs = F.softmax(output, dim=1)
-            pred = torch.argmax(probs, dim=1).item()
+            probs = F.softmax(output, dim=1)[0]  # shape: [2]
+            pred = torch.argmax(probs).item()
+    
+        return {
+            "label": "Real" if pred == 0 else "Fake",
+            "confidence": probs[pred].item(),
+            "scores": {
+                "real": probs[0].item(),
+                "fake": probs[1].item()
+            }
+        }
 
-        return {"label": "Real" if pred == 0 else "Fake", "confidence": probs[0][pred].item()}
 
     def predict_video(self, video_path, frame_skip=10, max_frames=20):
         """ 
-        Predict video by sampling frames
+        Predict video by sampling frames and return detection scores
         """
         cap = cv2.VideoCapture(video_path)
         frames = []
@@ -58,13 +73,21 @@ class Predictor:
         cap.release()
 
         if not frames:
-            return {"label": "Error", "confidence": 0.0}
+            return {"label": "Error", "confidence": 0.0, "scores": {"real": 0.0, "fake": 0.0}}
 
         frames = torch.cat(frames, dim=0).unsqueeze(0)  # [1, Seq, C, H, W]
 
         with torch.no_grad():
             output = self.model(frames)
-            probs = F.softmax(output, dim=1)
-            pred = torch.argmax(probs, dim=1).item()
+            probs = F.softmax(output, dim=1)[0]  # shape: [2]
+            pred = torch.argmax(probs).item()
 
-        return {"label": "Real" if pred == 0 else "Fake", "confidence": probs[0][pred].item()}
+        return {
+            "label": "Real" if pred == 0 else "Fake",
+            "confidence": probs[pred].item(),
+            "scores": {
+                "real": probs[0].item(),
+                "fake": probs[1].item()
+            }
+        }
+    

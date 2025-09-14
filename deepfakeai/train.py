@@ -9,7 +9,7 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 
 from deepfake.deepfakeai.utils import DeepfakeDataset
-from deepfake.deepfakeai.models import CNN_ViT_LSTM
+from deepfake.deepfakeai.models.base_model import CNN_ViT_LSTM
 
 logger = logging.getLogger(__name__)    
 

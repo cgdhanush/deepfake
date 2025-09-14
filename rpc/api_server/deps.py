@@ -2,7 +2,7 @@ from collections.abc import AsyncIterator
 from typing import Any
 from uuid import uuid4
 
-from deepfake.persistence import Video
+from deepfake.persistence import Video, Image
 from deepfake.persistence.models import _request_id_ctx_var
 from deepfake.rpc.rpc import RPC
 
@@ -19,6 +19,7 @@ async def get_rpc() -> AsyncIterator[RPC]:
         request_id = str(uuid4())
         ctx_token = _request_id_ctx_var.set(request_id)
         Video.rollback()
+        Image.rollback()
         try:
             yield _rpc
         finally:

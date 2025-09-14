@@ -20,8 +20,6 @@ class DeepFake:
     def __init__(self):
         self.config: Config = Configuration().get_config()
         init_db(self.config["db_url"])
-
-        self.predictor = Predictor(self.config)
         
     def startup(self) -> None:
         """
@@ -30,6 +28,8 @@ class DeepFake:
         from deepfake.rpc.api_server.webserver import ApiServer
         from deepfake.rpc import RPC
         
+        self.predictor = Predictor(self.config)
+
         # Start the Websrver
         self._api_server = ApiServer(self.config)
         self._rpc = RPC(self)

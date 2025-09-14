@@ -4,17 +4,17 @@ import os
 import torch
 from torchvision import transforms
 from torch.utils.data import DataLoader
-from sklearn.metrics import (
-    classification_report, 
-    confusion_matrix, 
-    ConfusionMatrixDisplay
-)
-import matplotlib.pyplot as plt  # <-- Add matplotlib import
-import seaborn as sns
+# from sklearn.metrics import (
+#     classification_report, 
+#     confusion_matrix, 
+#     ConfusionMatrixDisplay
+# )
+# import matplotlib.pyplot as plt  # <-- Add matplotlib import3
+# import seaborn as sns
 import numpy as np
 
 from deepfake.deepfakeai.utils import DeepfakeDataset
-from deepfake.deepfakeai.models import CNN_ViT_LSTM
+from deepfake.deepfakeai.models.base_model import CNN_ViT_LSTM
 
 logger = logging.getLogger(__name__)
 

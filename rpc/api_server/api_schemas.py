@@ -40,14 +40,14 @@ class ResultSchema(BaseModel):
     analysis_model: str
     detection_score: float
     deepfake_detected: bool
-    confidence: str
+    confidence: float
 
     model_config = {
         "from_attributes": True
     }
     
 class DeepfakeResponse(BaseModel):
-    id: int
+    id: str
     title: str
     description: Optional[str]
     duration: Optional[float]
