@@ -9,17 +9,14 @@ import numpy as np
 from glob import glob
 from tqdm import tqdm
 import multiprocessing
-# from imutils import face_utils
+from imutils import face_utils
 from functools import partial
-
 from deepfake.constants import FACE_PREDICTOR_NAME
 
 logger = logging.getLogger(__name__)
 
 # ====== Configuration ======
-NUM_FRAMES = 1
-IMG_META_DICT = dict()
-TEST_LIMIT = 200
+NUM_FRAMES = 10  
 
 # ====== Helper Functions ======
 def parse_video_path(videos_path: str, dataset: str):
@@ -29,10 +26,10 @@ def parse_video_path(videos_path: str, dataset: str):
         dataset_path = f'{videos_path}/manipulated/{dataset}/'
 
     movies_path_list = sorted(glob(dataset_path + '*.mp4'))
-    
+
     if len(movies_path_list) > 0:
         logger.info(f"{len(movies_path_list)} videos found in {dataset}")
-        
+
     return movies_path_list
 
 def parse_labels(video_path):
@@ -50,7 +47,13 @@ def preprocess_video(video_path, save_images_path, face_detector, face_predictor
 
     cap = cv2.VideoCapture(video_path)
     frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    frame_idxs = np.linspace(0, frame_count - 1, NUM_FRAMES, endpoint=True, dtype=int)
+    if frame_count < NUM_FRAMES:
+        logger.warning(f"Video {video_name} has only {frame_count} frames, less than {NUM_FRAMES}")
+        frame_idxs = np.arange(0, frame_count)
+    else:
+        frame_idxs = np.linspace(0, frame_count - 1, NUM_FRAMES, endpoint=True, dtype=int)
+
+    video_meta_dict = {}
 
     for cnt_frame in range(frame_count):
         ret, frame = cap.read()
@@ -79,6 +82,9 @@ def preprocess_video(video_path, save_images_path, face_detector, face_predictor
             face_sizes.append(face_area)
             landmarks.append(shape_np)
 
+        if not face_sizes:
+            continue
+
         landmarks = np.array(landmarks)
         largest_face_idx = np.argmax(face_sizes)
         chosen_landmark = landmarks[largest_face_idx]
@@ -86,24 +92,25 @@ def preprocess_video(video_path, save_images_path, face_detector, face_predictor
         # Save image as: videoName_frameNumber.png
         img_filename = f"{video_name}_frame_{cnt_frame}.png"
         img_path = os.path.join(save_dir, img_filename)
-        meta_key = os.path.join(os.path.basename(save_dir), img_filename)
+        meta_key = os.path.join(os.path.basename(save_images_path), os.path.basename(save_dir), img_filename)
 
         # Save frame
         cv2.imwrite(img_path, frame)
 
-        # Save metadata
-        IMG_META_DICT[meta_key] = {
+        # Collect metadata
+        video_meta_dict[meta_key] = {
             "landmark": chosen_landmark.tolist(),
             "label": label
         }
 
     cap.release()
+    return video_meta_dict
 
 # ====== Extract Frames ======
 
 def process_video(video_path, save_images_path, face_detector, face_predictor):
-    preprocess_video(str(video_path), str(save_images_path), face_detector, face_predictor)
-    
+    return preprocess_video(str(video_path), str(save_images_path), face_detector, face_predictor)
+
 def extract_frames(config: dict):
     predictor_path = config["modelsdir"] / FACE_PREDICTOR_NAME
     face_detector = dlib.get_frontal_face_detector()
@@ -114,17 +121,23 @@ def extract_frames(config: dict):
     save_images_path = config["imgdir"]
 
     train_size_pcr = config.get("train_size_pcr", 0.8)
+    dataset_size = config["dataset_size"]
 
-    video_paths_to_process = []
+    train_video_paths_to_process = []
+    test_video_paths_to_process = []
 
     for dataset in datasets:
-       
-        video_list = parse_video_path(str(videos_path), dataset)
+        all_video_list = parse_video_path(str(videos_path), dataset)
+        if len(all_video_list) < dataset_size:
+            raise ValueError(\
+                f"Requested {dataset_size} videos,"
+                f" but only {len(all_video_list)} available in {dataset}"
+            )
+
+        video_list = all_video_list[:dataset_size]
 
         # Split dataset into 80% train and 20% test
         train_size = int(train_size_pcr * len(video_list))
-        test_size = len(video_list) - train_size
-
         train_videos = random.sample(video_list, train_size)
         test_videos = [v for v in video_list if v not in train_videos]
 
@@ -132,24 +145,42 @@ def extract_frames(config: dict):
         train_path = save_images_path / "train"
         os.makedirs(train_path, exist_ok=True)
         for video_path in train_videos:
-            video_paths_to_process.append((video_path, train_path))
+            train_video_paths_to_process.append((video_path, train_path))
 
         # Process test videos
         test_path = save_images_path / "test"
         os.makedirs(test_path, exist_ok=True)
         for video_path in test_videos:
-            video_paths_to_process.append((video_path, test_path))
+            test_video_paths_to_process.append((video_path, test_path))
 
     pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
     process_fn = partial(process_video, face_detector=face_detector, face_predictor=face_predictor)
 
-    with tqdm(total=len(video_paths_to_process), desc="Processing videos") as pbar:
-        for video_path, save_path in pool.imap_unordered(process_fn, video_paths_to_process):
-            process_video(video_path, save_path, face_detector, face_predictor)
+    train_meta = {}
+    test_meta = {}
+
+    # Process TRAIN
+    with tqdm(total=len(train_video_paths_to_process), desc="Processing TRAIN videos") as pbar:
+        results = pool.starmap(process_fn, train_video_paths_to_process)
+        for video_meta in results:
+            train_meta.update(video_meta)
             pbar.update(1)
 
-    with open(os.path.join(save_images_path, "ldm.json"), 'w') as f:
-        json.dump(IMG_META_DICT, f, indent=4)
+    # Process TEST
+    with tqdm(total=len(test_video_paths_to_process), desc="Processing TEST videos") as pbar:
+        results = pool.starmap(process_fn, test_video_paths_to_process)
+        for video_meta in results:
+            test_meta.update(video_meta)
+            pbar.update(1)
 
     pool.close()
     pool.join()
+
+    # Save metadata separately
+    with open(os.path.join(str(save_images_path), "train", "ldm.json"), 'w') as f:
+        json.dump(train_meta, f, indent=4)
+
+    with open(os.path.join(str(save_images_path), "test", "ldm.json"), 'w') as f:
+        json.dump(test_meta, f, indent=4)
+
+    logger.info("Metadata saved: ldm_train.json and ldm_test.json")

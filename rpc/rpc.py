@@ -1,20 +1,17 @@
 """
-This module contains class to define a RPC communications
+This module contains class to define RPC communications for deepfake operations.
 """
 
-from datetime import datetime
-import os
-from sqlalchemy.orm import joinedload
 import logging
 from abc import abstractmethod
 from pathlib import Path
-from typing import TYPE_CHECKING
-   
+from sqlalchemy.orm import joinedload
+
 from deepfake import __version__
 from deepfake.constants import Config
 from deepfake.rpc.api_server.api_schemas import UserOut
 from deepfake.rpc.rpc_types import RPCSendMsg
-from deepfake.persistence import Video, Result, Image  # Make sure these are correct paths
+from deepfake.persistence import Video, Result, Image
 from deepfake.deepfake import DeepFake
 
 logger = logging.getLogger(__name__)
@@ -22,10 +19,8 @@ logger = logging.getLogger(__name__)
 
 class RPCException(Exception):
     """
-    Should be raised with a rpc-formatted message in an _rpc_* method
-    if the required state is wrong, i.e.:
-
-    raise RPCException('*Status:* `no active trade`')
+    Raised with a rpc-formatted message in an _rpc_* method
+    if the required state is wrong.
     """
 
     def __init__(self, message: str) -> None:
@@ -41,18 +36,11 @@ class RPCException(Exception):
 
 class RPCHandler:
     def __init__(self, rpc: "RPC", config: Config) -> None:
-        """
-        Initializes RPCHandlers
-        :param rpc: instance of RPC Helper class
-        :param config: Configuration object
-        :return: None
-        """
         self._rpc = rpc
         self._config: Config = config
 
     @property
     def name(self) -> str:
-        """Returns the lowercase name of the implementation"""
         return self.__class__.__name__.lower()
 
     @abstractmethod
@@ -61,7 +49,7 @@ class RPCHandler:
 
     @abstractmethod
     def send_msg(self, msg: RPCSendMsg) -> None:
-        """Sends a message to all registered rpc modules"""
+        """Sends a message to all registered RPC modules"""
 
 
 class RPC:
@@ -69,10 +57,9 @@ class RPC:
     RPC class provides access to database operations and deepfake analysis features.
     """
 
-    def __init__(self, deepfake: DeepFake ) -> None:
+    def __init__(self, deepfake: DeepFake) -> None:
         self._deepfake = deepfake
         self._config = deepfake.config
-
 
     def _rpc_deepfakes(self, user: "UserOut"):
         """
@@ -95,6 +82,11 @@ class RPC:
             .all()
         )
 
+        for v in videos:
+            setattr(v, "type", "video")
+        for i in images:
+            setattr(i, "type", "image")
+
         return videos + images
 
     def _rpc_deepfake_by_id(self, user: "UserOut", deepfake_id: int):
@@ -110,6 +102,7 @@ class RPC:
         )
 
         if video:
+            setattr(video, "type", "video")
             return video
 
         image = (
@@ -118,6 +111,9 @@ class RPC:
             .filter(Image.user_id == user.id, Image.id == deepfake_id)
             .one_or_none()
         )
+
+        if image:
+            setattr(image, "type", "image")
 
         return image
 
@@ -135,11 +131,10 @@ class RPC:
             analysis_model=model_name,
             deepfake_detected=(label == "Fake"),
             confidence=float(_result["confidence"]),
-            detection_score=float(_result["scores"]["fake"]),  # Use fake score
+            detection_score=float(_result["scores"]["fake"]),
             real_score=float(_result["scores"]["real"]),
             fake_score=float(_result["scores"]["fake"]),
         )
-
 
     def _rpc_video_analysis(self, file_path: str) -> Result:
         """
@@ -155,7 +150,7 @@ class RPC:
             analysis_model=model_name,
             deepfake_detected=(label == "Fake"),
             confidence=float(_result["confidence"]),
-            detection_score=float(_result["scores"]["fake"]),  # Use fake score
+            detection_score=float(_result["scores"]["fake"]),
             real_score=float(_result["scores"]["real"]),
             fake_score=float(_result["scores"]["fake"]),
         )
@@ -232,39 +227,50 @@ class RPC:
             logger.error(f"Failed to add deepfake video for user {user_id}: {e}")
             raise RuntimeError(f"Failed to add deepfake video: {str(e)}")
 
-
-    def _rpc_dummy_analysis(self) -> Result:
-        """
-        Return a dummy Result instance (useful for testing).
-        """
-        return Result(
-            analysis_model="MockDeepfakeDetector_v1",
-            detection_score=0.92,
-            deepfake_detected=True,
-            confidence=0.92,
-        )
-
-    def _rpc_delete_deepfake(self, user: "UserOut", deepfake_id: int) -> bool:
-        """
-        Delete a deepfake video entry by ID.
-        """
+    def _rpc_delete_deepfake(self, user: "UserOut", deepfake_id: str) -> bool:
         try:
+            session = Video.session  # Use shared or injected session properly here
+
             video = (
-                Video.session.query(Video)
+                session.query(Video)
+                .options(joinedload(Video.result))
                 .filter(Video.id == deepfake_id, Video.user_id == user.id)
                 .first()
             )
 
-            if not video:
-                return False
+            if video:
+                video.result = None  # Break relationship so cascade works
+                session.delete(video)
+                session.commit()
+                return True
 
-            Video.session.delete(video)
-            Video.session.commit()
-            return True
+            # Try image similarly
+            image = (
+                Image.session.query(Image)
+                .options(joinedload(Image.result))
+                .filter(Image.id == deepfake_id, Image.user_id == user.id)
+                .first()
+            )
+
+            if image:
+                image.result = None
+                Image.session.delete(image)
+                Image.session.commit()
+                return True
+
+            return False
 
         except Exception as e:
-            Video.session.rollback()
             logger.error(
-                f"Failed to delete deepfake video {deepfake_id} for user {user.id}: {e}"
+                f"Failed to delete deepfake entry {deepfake_id} for user {user.id}: {e}"
             )
+            try:
+                Video.session.rollback()
+            except Exception:
+                pass
+            try:
+                Image.session.rollback()
+            except Exception:
+                pass
             raise RuntimeError(f"Failed to delete deepfake: {str(e)}")
+

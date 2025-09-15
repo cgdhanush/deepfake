@@ -51,8 +51,7 @@ def main() -> None:
             DeepFake().start_predict()
         
         elif args.get("command") == "extract":
-            mode = args.get("mode")
-            DeepFake().start_extract_frames(mode)
+            DeepFake().start_extract_frames()
             
         elif args.get("command") == "create-userdir":
             start_create_userdir()

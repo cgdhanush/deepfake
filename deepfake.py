@@ -50,13 +50,12 @@ class DeepFake:
         from deepfake.deepfakeai import test_model
         test_model(self.config)
     
-    def start_extract_frames(self, mode: str) -> None:
+    def start_extract_frames(self,) -> None:
         """"
         strat the training model...
         """
         from deepfake.deepfakeai import extract_frames
-        
-        self.config["mode"] = mode
+
         extract_frames(self.config)
     
     def start_predict(self) -> None:

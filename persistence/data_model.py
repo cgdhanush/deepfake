@@ -1,13 +1,13 @@
 import random
 import string
-
-from sqlalchemy import Integer, String, Float, Boolean, DateTime, ForeignKey, select
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+import logging
 from datetime import datetime
 from typing import ClassVar, Optional
 
+from sqlalchemy import Integer, String, Float, Boolean, DateTime, ForeignKey, select
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from deepfake.persistence.base import ModelBase, SessionType
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +27,7 @@ class User(ModelBase):
     __tablename__ = "users"
     session: ClassVar[SessionType]
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)  # KEEP AS INT
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)  # Keep as int
     username: Mapped[str] = mapped_column(String, unique=True, index=True, nullable=False)
     email: Mapped[str] = mapped_column(String, unique=True, index=True, nullable=False)
     hashed_password: Mapped[str] = mapped_column(String, nullable=False)
@@ -40,7 +40,7 @@ class User(ModelBase):
     )
 
     def __repr__(self):
-        return f"User(id={self.id}, username={self.username})"
+        return f"<User(id={self.id}, username={self.username})>"
 
 
 class Video(ModelBase):
@@ -56,7 +56,7 @@ class Video(ModelBase):
     uploadedDate: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.now)
     video_filename: Mapped[Optional[str]] = mapped_column(String)
 
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)  # FK to int User.id
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
     user: Mapped["User"] = relationship("User", back_populates="videos")
 
     result: Mapped[Optional["Result"]] = relationship(
@@ -69,15 +69,16 @@ class Video(ModelBase):
         super().__init__(**kwargs)
 
     def __repr__(self):
-        return f"Video(id={self.id}, title={self.title})"
+        return f"<Video(id={self.id}, title={self.title})>"
 
     @staticmethod
     def commit():
-        Image.session.commit()
+        Video.session.commit()
 
     @staticmethod
     def rollback():
-        Image.session.rollback()
+        Video.session.rollback()
+
 
 class Image(ModelBase):
     __tablename__ = "images"
@@ -91,7 +92,7 @@ class Image(ModelBase):
     uploadedDate: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.now)
     image_filename: Mapped[Optional[str]] = mapped_column(String)
 
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)  # FK to int User.id
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
     user: Mapped["User"] = relationship("User", back_populates="images")
 
     result: Mapped[Optional["Result"]] = relationship(
@@ -104,7 +105,7 @@ class Image(ModelBase):
         super().__init__(**kwargs)
 
     def __repr__(self):
-        return f"Image(id={self.id}, title={self.title})"
+        return f"<Image(id={self.id}, title={self.title})>"
 
     @staticmethod
     def commit():
@@ -113,6 +114,7 @@ class Image(ModelBase):
     @staticmethod
     def rollback():
         Image.session.rollback()
+
 
 class Result(ModelBase):
     __tablename__ = "results"
@@ -123,13 +125,13 @@ class Result(ModelBase):
     video_id: Mapped[Optional[str]] = mapped_column(ForeignKey("videos.id"), unique=True)
     image_id: Mapped[Optional[str]] = mapped_column(ForeignKey("images.id"), unique=True)
 
-    analysis_model: Mapped[str] = mapped_column(String)
-    detection_score: Mapped[float] = mapped_column(Float)
-    deepfake_detected: Mapped[bool] = mapped_column(Boolean)
-    confidence: Mapped[float] = mapped_column(Float)
+    analysis_model: Mapped[str] = mapped_column(String, nullable=False)
+    detection_score: Mapped[float] = mapped_column(Float, nullable=False)
+    deepfake_detected: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    confidence: Mapped[float] = mapped_column(Float, nullable=False)
 
-    real_score: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    fake_score: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    real_score: Mapped[Optional[float]] = mapped_column(Float)
+    fake_score: Mapped[Optional[float]] = mapped_column(Float)
 
     video: Mapped[Optional["Video"]] = relationship("Video", back_populates="result")
     image: Mapped[Optional["Image"]] = relationship("Image", back_populates="result")
@@ -141,4 +143,8 @@ class Result(ModelBase):
 
     def __repr__(self):
         target = "Video" if self.video_id else "Image"
-        return f"Result({target}, model={self.analysis_model}, score={self.detection_score}, detected={self.deepfake_detected})"
+        return (
+            f"<Result(id={self.id}, target={target}, "
+            f"model={self.analysis_model}, score={self.detection_score}, "
+            f"detected={self.deepfake_detected})>"
+        )
