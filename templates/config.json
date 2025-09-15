@@ -1,19 +1,21 @@
-{   "models": {
+{   "models1": {
         "cnn_backbone": "resnet18",
         "vit_backbone": "vit_base_patch16_224"
     },
-    "model_name": "DeepfakeDetector_v1",
+    "models": {
+        "cnn_backbone": "xception",
+        "vit_backbone": "vit_tiny_patch16_224"
+    },
+
+    "model_name": "DeepfakeDetector_v2",
 
     "datasets": [
         "Actors",
-        "Youtube", 
-        "FaceSwap", 
-        "FaceShifter", 
-        "Face2Face", 
-        "Deepfakes", 
-        "NeuralTextures"
+        "Deepfakes",
+        "FaceSwap",
+        "DeepFakeDetection"
     ],
-    "compression": ["raw","c40"],
+    "dataset_size": 500,
     
     "api_server": {
         "listen_ip_address": "127.0.0.1",
