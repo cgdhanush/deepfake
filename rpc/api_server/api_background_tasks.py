@@ -43,7 +43,7 @@ def get_files(filename: str, config: dict = Depends(get_config)):
 
     return FileResponse(path=file_path, media_type=media_type, filename=filename)
 
-@router.post("/upload-video")
+@router.post("/upload-video", tags=["background"])
 async def upload_video(
     user_id: int = Form(...),
     video: UploadFile = File(...),
@@ -79,7 +79,7 @@ async def upload_video(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Server error: {str(e)}")
 
-@router.post("/upload-image")
+@router.post("/upload-image", tags=["background"])
 async def upload_video(
     user_id: int = Form(...),
     image: UploadFile = File(...),

@@ -2,6 +2,10 @@
 
 # Deepfake Detection
 
+This Deepfake Detection project provides a complete pipeline for identifying manipulated videos using deep learning. It includes tools for extracting faces from video frames, training a model to distinguish real from fake faces, and evaluating its accuracy. A FastAPI-powered web app allows users to upload videos and receive deepfake detection results through an intuitive interface. The system also manages user data automatically and follows a modular structure, making it easy to extend, customize, or debug.
+
+
+
 ## Features
 
 * 🎥 **Face Extraction**: Automatically extracts faces from video frames for training/testing.

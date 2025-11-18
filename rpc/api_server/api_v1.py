@@ -47,7 +47,7 @@ def get_deepfake_by_id(deepfake_id: str, rpc: RPC = Depends(get_rpc), user: User
     except RPCException:
         return []
 
-@router.delete("/deepfakes/{deepfake_id}")
+@router.delete("/deepfakes/{deepfake_id}", tags=["delete"])
 def delete_deepfake_endpoint(deepfake_id: str,  rpc: RPC = Depends(get_rpc), user: UserOut = Depends(get_current_user)):
     success = rpc._rpc_delete_deepfake(user, deepfake_id)
     if not success:

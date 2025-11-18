@@ -75,7 +75,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
     return user
 
 # Routes
-@router_login.post("/auth/signup", response_model=UserOut, status_code=201)
+@router_login.post("/auth/signup", response_model=UserOut, status_code=201, tags=["user"])
 def signup(user_in: UserCreate):
     # Check if username or email exists
     if User.session.query(User).filter(User.username == user_in.username).first():
@@ -93,7 +93,7 @@ def signup(user_in: UserCreate):
     User.session.refresh(user)
     return user
 
-@router_login.post("/auth/login", response_model=Token)
+@router_login.post("/auth/login", response_model=Token, tags=["user"])
 def login(response: Response,form_data: OAuth2PasswordRequestForm = Depends()):
     user = authenticate_user(form_data.username, form_data.password)
     if not user:
@@ -109,6 +109,6 @@ def login(response: Response,form_data: OAuth2PasswordRequestForm = Depends()):
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
-@router_login.get("/users/me", response_model=UserOut)
+@router_login.get("/users/me", response_model=UserOut, tags=["user"])
 async def read_users_me(current_user: User = Depends(get_current_user)):
     return current_user

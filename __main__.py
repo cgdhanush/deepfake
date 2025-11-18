@@ -3,7 +3,7 @@
 __main__.py for Deepfake
 To launch Deepfake as a module
 
-> python -m deepfake (with Python >= 3.11)
+> python -m deepfake (with Python >= 3.12)
 """
 
 from deepfake import main
