@@ -55,10 +55,10 @@ python -m deepfake create-userdir
 
 ### 1. Extract Faces from Dataset
 
-Extract frames and faces from videos for training or testing:
+Extract frames and faces from videos for training or testing by default 80% for traing and 20% for tesing:
 
 ```bash
-python -m deepfake extract --mode train   # or use 'test' for testing data
+python -m deepfake extract 
 ```
 
 ### 2. Train the Model
